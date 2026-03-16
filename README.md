@@ -2,6 +2,8 @@
 
 Simulador interativo de escala astronômica do Sistema Solar, em Português do Brasil. Inspirado em [If the Moon Were Only 1 Pixel](https://joshworth.com/dev/pixelspace/pixelspace_solarsystem.html) de Josh Worth.
 
+### 🚀 [Acesse a versão online](https://wilsonfrantine.github.io/palebluedot)
+
 ## Sobre o projeto
 
 A escala padrão é de **1 px ≈ 3.000 km**. O usuário pode navegar arrastando, rolando o mouse ou usando o minimapa superior para saltar entre os planetas, e ampliar com `Ctrl + scroll`.
@@ -20,13 +22,11 @@ A escala padrão é de **1 px ≈ 3.000 km**. O usuário pode navegar arrastando
 
 ## Como usar
 
-Abra `index.html` diretamente no navegador (não requer servidor).
+Você pode acessar o projeto diretamente em: **[wilsonfrantine.github.io/palebluedot](https://wilsonfrantine.github.io/palebluedot)**
 
-```
-git clone <repo>
-cd palebluedot
-# Abra index.html no navegador
-```
+Para rodar localmente:
+1. Clone o repositório: `git clone https://github.com/wilsonfrantine/palebluedot.git`
+2. Abra `index.html` diretamente no navegador (não requer servidor).
 
 ## Adicionando fotos dos planetas
 
