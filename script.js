@@ -52,6 +52,7 @@ let currentScale = 3000; // 1px = 3000 km inicial
 let scrollPos    = 0;
 let sensitivity  = 1;
 let isLightSpeed = false;
+let isLightspeedManual = false; // Scroll sem warp via botão manual
 
 // Tour guiado
 let tourActive       = false;
@@ -82,13 +83,13 @@ let lastShownWaypointIdx = -1;
 
 // Callback ao término da animação programada
 let animCallback = null;
+let animEasing   = null; // null = usa easeInOutCubic padrão
 
 // Estado da animação programada
 let targetScale      = 3000;
 let scaleStart       = 3000;
 let scrollStart      = 0;
 let focalDist        = 0;
-let initialBodyOffset = 0;
 let animStartTime    = null;
 let isAnimating      = false;
 let animDuration     = 2500;
@@ -96,9 +97,18 @@ let animDuration     = 2500;
 // Cached star layer references (set in createStars)
 let starLayers = [];
 
+// Inércia e Gestos para toque
+let touchVelocity    = 0;
+let lastTouchX       = 0;
+let lastTouchTime    = 0;
+let inertiaFrame     = null;
+let initialPinchDist = null;
+let initialPinchScale = 1;
+
 // Star layer scroll offsets for speed-based movement (px, accumulates)
 let starScrollOffsets = [0, 0, 0];
-let prevAnyLight      = false;
+let prevAnyLight  = false;
+let prevStreaking  = false;
 
 // Delta-time tracking for frame-rate-independent lightspeed
 let prevFrameTime = null;
@@ -135,6 +145,10 @@ const starFieldEl = document.getElementById('star-field');
 
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
 }
 
 function formatTime(sec) {
@@ -200,7 +214,7 @@ function init() {
     buildInfoDisplay();
     setupEvents();
     currentScale = 3000;
-    scrollPos    = -10_000_000 / currentScale; // start at welcome overlay position
+    scrollPos    = -4_000_000 / currentScale; // start at welcome overlay position
     // Collapse minimap by default on small screens
     if (window.innerWidth <= 600 || (window.innerHeight <= 440 && window.innerWidth > window.innerHeight)) {
         const mc = document.getElementById('minimap-container');
@@ -322,7 +336,7 @@ function createUniverse() {
         if (body.id === 'pluto') {
             const love = document.createElement('div');
             love.className = 'pluto-love';
-            love.innerText = 'Plutão, ainda te amamos ♥';
+            love.innerText = 'ainda te amamos ♥';
             container.appendChild(love);
         }
 
@@ -476,7 +490,8 @@ function updateUniversePositions() {
 
             const planet = document.getElementById(`body-${body.id}`);
             planet.style.width  = sizePx + 'px';
-            planet.style.height = sizePx + 'px';
+            // Haumea é achatada nos polos — razão real ~2:1 (2322 × 1138 km)
+            planet.style.height = (body.id === 'haumea' ? sizePx * 0.5 : sizePx) + 'px';
 
             if (body.id === 'saturn') {
                 // Anéis só mudam em zoom — ignora durante scroll puro (< 0.3px de variação)
@@ -727,7 +742,7 @@ function setupEvents() {
         } else {
             isAnimating = false;
             scrollPos += e.deltaY * sensitivity;
-            scrollPos = Math.max(-10_000_000 / currentScale, scrollPos);
+            scrollPos = Math.max(-4_000_000 / currentScale, scrollPos);
             updateScroll();
         }
     }, { passive: false });
@@ -745,7 +760,7 @@ function setupEvents() {
         const dx = dragStartX - e.clientX;
         if (tourActive && Math.abs(dx) > 6) interruptTour();
         isAnimating = false;
-        scrollPos = Math.max(-10_000_000 / currentScale, dragStartScrollPos + dx);
+        scrollPos = Math.max(-4_000_000 / currentScale, dragStartScrollPos + dx);
         updateScroll();
     });
 
@@ -757,36 +772,86 @@ function setupEvents() {
     // Touch events for mobile navigation
     window.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
+            if (inertiaFrame) cancelAnimationFrame(inertiaFrame);
             isDragging = true;
             dragStartX = e.touches[0].clientX;
             dragStartScrollPos = scrollPos;
-            // Evita o comportamento padrão de "pull to refresh" ou scroll da página
-            if (e.target.closest('#universe') || e.target.closest('body')) {
-                // Não cancelamos se for em botões ou painéis interativos
-                if (!e.target.closest('button') && !e.target.closest('input')) {
-                    // e.preventDefault(); // Removido para permitir scroll em painéis se necessário
-                }
-            }
+
+            lastTouchX = e.touches[0].clientX;
+            lastTouchTime = performance.now();
+            touchVelocity = 0;
+            initialPinchDist = null;
+        } else if (e.touches.length === 2) {
+            isDragging = false;
+            initialPinchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            initialPinchScale = currentScale;
         }
     }, { passive: true });
 
     window.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && initialPinchDist) {
+            const currentDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const ratio = initialPinchDist / currentDist;
+            applyManualZoom(initialPinchScale * ratio);
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
         if (!isDragging || e.touches.length !== 1) return;
-        
-        const dx = (dragStartX - e.touches[0].clientX) * sensitivity;
+
+        const currentX = e.touches[0].clientX;
+        const currentTime = performance.now();
+        const dt = currentTime - lastTouchTime;
+
+        const dx = (dragStartX - currentX) * sensitivity;
         if (tourActive && Math.abs(dx) > 10) interruptTour();
 
+        if (dt > 0) {
+            touchVelocity = (lastTouchX - currentX) / dt;
+        }
+        lastTouchX = currentX;
+        lastTouchTime = currentTime;
+
         isAnimating = false;
-        scrollPos = Math.max(-10_000_000 / currentScale, dragStartScrollPos + dx);
+
+        const minScroll = -4_000_000 / currentScale;
+        const maxScroll = MINIMAP_MAX_KM / currentScale;
+        scrollPos = Math.max(minScroll, Math.min(maxScroll, dragStartScrollPos + dx));
+
         updateScroll();
-        
-        // Impede o scroll nativo da página enquanto arrasta no simulador
         if (e.cancelable) e.preventDefault();
     }, { passive: false });
 
     window.addEventListener('touchend', () => {
         isDragging = false;
+
+        if (Math.abs(touchVelocity) > 0.1) {
+            applyInertia();
+        }
     });
+
+    function applyInertia() {
+        const friction = 0.97;
+        const minScroll = -4_000_000 / currentScale;
+        const maxScroll = MINIMAP_MAX_KM / currentScale;
+
+        scrollPos += touchVelocity * 16 * sensitivity;
+        scrollPos = Math.max(minScroll, Math.min(maxScroll, scrollPos));
+
+        updateScroll();
+
+        touchVelocity *= friction;
+
+        if (Math.abs(touchVelocity) > 0.01) {
+            inertiaFrame = requestAnimationFrame(applyInertia);
+        }
+    }
 
     // Redimensionamento
     window.addEventListener('resize', () => {
@@ -806,15 +871,14 @@ function setupEvents() {
     if (lightspeedBtn) {
         lightspeedBtn.onclick = () => {
             if (tourActive) return;
-            if (isLightSpeed) {
-                // Decelerate to stop
+            if (isLightspeedManual) {
                 lightspeedDecelerating = true;
                 lightspeedDecelStart   = null;
                 lightspeedDecelSpeed   = LIGHT_SPEED_KM_S;
-                isLightSpeed = false;
+                isLightspeedManual = false;
             } else {
                 lightspeedDecelerating = false;
-                isLightSpeed = true;
+                isLightspeedManual = true;
                 // Sync waypoint index to current position so we don't replay passed waypoints
                 const curKm = scrollPos * currentScale;
                 lastShownWaypointIdx = journeyWaypoints.reduce((acc, wp, i) =>
@@ -873,6 +937,10 @@ function setupEvents() {
             if (!container) return;
             const collapsed = container.classList.toggle('collapsed');
             minimapToggle.setAttribute('aria-expanded', !collapsed);
+            // Força o recálculo da largura para que os planetas fiquem nas posições corretas
+            if (!collapsed) {
+                setTimeout(createMinimap, 350); // Aguarda a transição CSS terminar
+            }
         };
     }
 
@@ -907,7 +975,7 @@ function setupEvents() {
 // ─── Zoom Manual ─────────────────────────────────────────────────────────────
 
 function applyManualZoom(newScale) {
-    newScale = Math.max(0.01, Math.min(10000, newScale));
+    newScale = Math.max(0.01, Math.min(5000, newScale));
     const centerDist = scrollPos * currentScale;
     currentScale = newScale;
     scrollPos    = centerDist / currentScale;
@@ -945,7 +1013,7 @@ function updateScroll() {
     updateScaleIntro();
 }
 
-const RULER_START_KM = -5_000_000; // régua começa 5M km antes do Sol
+const RULER_START_KM = -1_000_000; // régua começa 1M km antes do Sol
 
 function rulerLeftPx() {
     // Posição de tela do ponto de início da régua
@@ -961,8 +1029,8 @@ function updateRulerPosition() {
 function updateWelcomeOverlay() {
     const ws = document.getElementById('welcome-screen');
     if (!ws) return;
-    // Slide with the universe: translate so the screen is centered at km = -10M
-    const offsetPx = screenX(-10_000_000) - window.innerWidth / 2;
+    // Slide with the universe: translate so the screen is centered at km = -4M
+    const offsetPx = screenX(-4_000_000) - window.innerWidth / 2;
     ws.style.transform = `translateX(${offsetPx}px)`;
     // Pointer events only when close to viewport (within 1 screen width)
     ws.style.pointerEvents = Math.abs(offsetPx) < window.innerWidth ? 'auto' : 'none';
@@ -974,20 +1042,20 @@ function updateScaleIntro() {
 
     const km = scrollPos * currentScale;
 
-    // Visível apenas entre a tela de início e o Sol (-8M a 0 km)
-    if (km <= -8_000_000 || scrollPos >= 0) {
+    // Visível apenas entre a tela de início e o Sol (-4M a 0 km)
+    if (km <= -4_000_000 || scrollPos >= 0) {
         si.style.display = 'none';
         return;
     }
 
     si.style.display = 'flex';
 
-    // Fade in: -8M → -6M (0 → 1); Fade out: -1.5M → 0 (1 → 0)
+    // Fade in: -3M → -2.5M (0 → 1); Fade out: -1M → 0 (1 → 0)
     let opacity = 1;
-    if (km < -6_000_000) {
-        opacity = (km - (-8_000_000)) / 2_000_000;         // 0→1 entre -8M e -6M
-    } else if (km > -1_500_000) {
-        opacity = km / (-1_500_000);                        // 1→0 entre -1.5M e 0
+    if (km < -2_500_000) {
+        opacity = (km - (-3_000_000)) / 500_000;         // 0→1 entre -3M e -2.5M
+    } else if (km > -1_000_000) {
+        opacity = km / (-1_000_000);                      // 1→0 entre -1M e 0
     }
     si.style.opacity = Math.max(0, Math.min(1, opacity));
 
@@ -1009,6 +1077,12 @@ function updateUI() {
     const distUA  = distKm / UA_KM;
     const distAL  = distKm / AL_KM;
     const lightSec = distKm / LIGHT_SPEED_KM_S;
+
+    // Oculta botão de velocidade da luz antes do Sol (0 km)
+    const lsBtn = document.getElementById('lightspeed-btn');
+    if (lsBtn) {
+        lsBtn.style.display = distKm < 0 ? 'none' : 'flex';
+    }
 
     // Só atualiza os spans quando o valor muda de forma perceptível
     // (threshold = 1 "pixel escalonado" de distância — elimina writes desnecessários)
@@ -1109,7 +1183,7 @@ function updateRuler() {
 
 // ─── Animação Programada ─────────────────────────────────────────────────────
 
-function startProgrammedAnim(targetDistKm, targetS, onComplete = null, duration = 2500) {
+function startProgrammedAnim(targetDistKm, targetS, onComplete = null, duration = 2500, easing = null) {
     // Mensagens de manobra
     if (targetS < currentScale * 0.45 && currentScale > 300) {
         showMsgOverlay('Entrando em órbita...', 2500);
@@ -1120,12 +1194,12 @@ function startProgrammedAnim(targetDistKm, targetS, onComplete = null, duration 
     targetScale       = targetS;
     scaleStart        = currentScale;
     focalDist         = targetDistKm;
-    scrollStart       = scrollPos;
-    initialBodyOffset = scrollStart - focalDist / scaleStart;
-    animStartTime     = performance.now();
-    isAnimating       = true;
-    animDuration      = duration;
-    animCallback      = onComplete;
+    scrollStart   = scrollPos;
+    animStartTime = performance.now();
+    isAnimating  = true;
+    animDuration = duration;
+    animCallback = onComplete;
+    animEasing   = easing;
 }
 
 // ─── Loop de Animação ────────────────────────────────────────────────────────
@@ -1141,17 +1215,20 @@ function animate(now) {
         const DURATION = animDuration;
         const elapsed  = now - animStartTime;
         const t        = Math.min(elapsed / DURATION, 1);
-        const eased    = easeInOutCubic(t);
+        const eased    = animEasing ? animEasing(t) : easeInOutCubic(t);
 
         currentScale = scaleStart + (targetScale - scaleStart) * eased;
 
-        // Astro focal move linearmente na tela até o centro durante o zoom
-        scrollPos = (1 - eased) * initialBodyOffset + focalDist / currentScale;
+        // Interpolação linear em km — evita overshoot ao navegar para trás
+        const startKm  = scrollStart * scaleStart;
+        const currentKm = startKm + (focalDist - startKm) * eased;
+        scrollPos = currentKm / currentScale;
 
         if (t >= 1) {
             isAnimating  = false;
             currentScale = targetScale;
             scrollPos    = focalDist / targetScale;
+            animEasing   = null;
             const cb = animCallback;
             animCallback = null;
             if (cb) cb();
@@ -1159,7 +1236,7 @@ function animate(now) {
         dirty = true;
     }
 
-    if (isLightSpeed) {
+    if (isLightSpeed || isLightspeedManual) {
         const speedKmS = (tourActive && tourTransitSpeedKmS !== null)
             ? tourTransitSpeedKmS
             : LIGHT_SPEED_KM_S;
@@ -1171,6 +1248,7 @@ function animate(now) {
         // Tour: detecta cruzamento do limiar para ativar dobra
         if (tourActive && warpThresholdKm !== null && currentKm >= warpThresholdKm) {
             isLightSpeed        = false;
+            isLightspeedManual  = false;
             tourTransitSpeedKmS = null;
             warpThresholdKm     = null;
             isWarpVisual        = true;
@@ -1213,13 +1291,17 @@ function animate(now) {
 
     if (dirty) updateScroll(); // updateUniversePositions + updateUI
 
-    // Warp visual contributes to the same "streaking stars" effect as lightspeed
-    const anyLight = isLightSpeed || lightspeedDecelerating || isWarpVisual;
+    // anyMotion: ativa foton e lightspeed-active (botão manual + tour + warp)
+    // streaking: estrelas esticadas APENAS no warp visual (saltos do minimapa)
+    const anyMotion = isLightSpeed || isLightspeedManual || lightspeedDecelerating || isWarpVisual;
+    const streaking = isWarpVisual;
     // Só chama classList.toggle quando o estado muda — evita cascade de CSS em 99% dos frames
-    if (anyLight !== prevAnyLight) {
-        if (photon)      photon.classList.toggle('active',      anyLight);
-        if (starFieldEl) starFieldEl.classList.toggle('warp-active', anyLight);
-        document.body.classList.toggle('lightspeed-active', anyLight);
+    if (anyMotion !== prevAnyLight || streaking !== prevStreaking) {
+        if (photon)      photon.classList.toggle('active',      anyMotion);
+        if (starFieldEl) starFieldEl.classList.toggle('warp-active', streaking);
+        document.body.classList.toggle('lightspeed-active', anyMotion);
+        prevAnyLight = anyMotion;
+        prevStreaking = streaking;
     }
     if (tourActive !== _prevTourActive) {
         document.body.classList.toggle('tour-active', tourActive);
@@ -1235,7 +1317,7 @@ function animate(now) {
 
     // Compute fractional speed (0=stopped, 1=1c, >1 if tour speed > 1c)
     let speedFactor = 0;
-    if (isLightSpeed) {
+    if (isLightSpeed || isLightspeedManual) {
         const kmS = (tourActive && tourTransitSpeedKmS !== null) ? tourTransitSpeedKmS : LIGHT_SPEED_KM_S;
         speedFactor = kmS / LIGHT_SPEED_KM_S;
     } else if (isWarpVisual) {
@@ -1247,15 +1329,14 @@ function animate(now) {
     }
 
     // Sync offsets when entering lightspeed so there's no visual jump
-    if (anyLight && !prevAnyLight) {
+    if (anyMotion && !prevAnyLight) {
         starLayers.forEach((_, l) => {
             const raw = (kmPos / PLUTO_KM_REF) * maxShifts[l];
             starScrollOffsets[l] = raw % window.innerWidth;
         });
     }
-    prevAnyLight = anyLight;
 
-    if (anyLight && speedFactor > 0) {
+    if (anyMotion && speedFactor > 0) {
         starLayers.forEach((layer, l) => {
             if (!layer) return;
             starScrollOffsets[l] = (starScrollOffsets[l] + basePixels[l] * speedFactor * dt) % window.innerWidth;
@@ -1669,24 +1750,30 @@ function navigateWithWarp(body, tgtScale) {
 
     const doWarp = () => {
         isWarpVisual = true;
-        isLightSpeed = true;
-        // Sync waypoint index to current position
         const curKm = scrollPos * currentScale;
         lastShownWaypointIdx = journeyWaypoints.reduce((acc, wp, i) =>
             wp.km <= curKm ? i : acc, -1);
 
-        // 2s of real lightspeed movement, then programmed animation with warp still on
-        warpOffTimeout = setTimeout(() => {
-            if (!isWarpVisual) return;
-            isLightSpeed = false;
-            const animDur = 3000;
-            // Turn off warp 1s before arrival
+        const animDur = 5000;
+        const warpEnd = () => {
+            isWarpVisual = false;
+            if (panelOpen) openPlanetDetail(body);
+        };
+
+        if (body.dist >= curKm) {
+            // Destino à frente: 1s de viagem real, depois animação longa com ease-out
+            isLightSpeed = true;
+            warpOffTimeout = setTimeout(() => {
+                if (!isWarpVisual) return;
+                isLightSpeed = false;
+                warpOffTimeout = setTimeout(() => { isWarpVisual = false; }, animDur - 1000);
+                startProgrammedAnim(body.dist, tgtScale, warpEnd, animDur, easeOutCubic);
+            }, 1000);
+        } else {
+            // Destino atrás: sem drift — animação longa com ease-out
             warpOffTimeout = setTimeout(() => { isWarpVisual = false; }, animDur - 1000);
-            startProgrammedAnim(body.dist, tgtScale, () => {
-                isWarpVisual = false;
-                if (panelOpen) openPlanetDetail(body);
-            }, animDur);
-        }, 2000);
+            startProgrammedAnim(body.dist, tgtScale, warpEnd, animDur, easeOutCubic);
+        }
     };
 
     // If currently zoomed in, zoom out to 3000 first, then warp
@@ -1704,7 +1791,7 @@ function updateFreeLightspeedBtn() {
     const btn  = document.getElementById('lightspeed-btn');
     const text = document.getElementById('lightspeed-text');
     if (!btn || !text) return;
-    if (isLightSpeed) {
+    if (isLightspeedManual) {
         text.innerText = 'PARAR';
         btn.classList.add('active');
     } else {

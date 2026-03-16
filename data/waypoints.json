@@ -6,7 +6,7 @@
       "detail": "avance pelo Sistema Solar em escala real" },
 
     { "km": 7000000,  "type": "help", "title": "VELOCIDADE DA LUZ",
-      "dist": "Pressione ⚡ para viajar a 299.792 km/s",
+      "dist": "Pressione <img src=\"photos/c.svg\" alt=\"c\" style=\"width: 2.5vh; height: 100%; vertical-align: middle; opacity: 0.8;\" /> para viajar a 299.792 km/s",
       "detail": "a velocidade máxima do universo" },
 
     { "km": 14000000, "type": "help", "title": "MINIMAPA",

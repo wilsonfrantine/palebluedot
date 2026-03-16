@@ -978,7 +978,7 @@ body.dragging #universe { cursor: grabbing; }
 
 .pluto-love {
     position: absolute;
-    top: 44px;
+    top: -44px;
     font-size: 10px;
     letter-spacing: 2px;
     color: rgba(255, 180, 180, 0.45);

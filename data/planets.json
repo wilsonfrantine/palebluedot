@@ -81,7 +81,7 @@
     },
     {
       "id": "haumea", "name": "Haumea", "dist": 6452000000, "size": 1.62, "color": "#C8B4A0",
-      "rings": null, "photo": "haumea.jpg",
+      "rings": null, "photo": "haumea.png",
       "moons": [
         { "id": "hi-iaka", "name": "Hiʻiaka", "dist": 49880, "size": 0.320, "color": "#AAAAAA", "side":  1 },
         { "id": "namaka",  "name": "Namaka",  "dist": 25657, "size": 0.170, "color": "#999999", "side": -1 }
@@ -89,14 +89,14 @@
     },
     {
       "id": "makemake", "name": "Makemake", "dist": 6850000000, "size": 1.430, "color": "#C4703A",
-      "rings": null, "photo": "makemake.jpg",
+      "rings": null, "photo": "makemake.png",
       "moons": [
         { "id": "mk2", "name": "MK2", "dist": 21000, "size": 0.160, "color": "#888888", "side": 1 }
       ]
     },
     {
       "id": "eris", "name": "Éris", "dist": 10120000000, "size": 2.326, "color": "#CCCCCC",
-      "rings": null, "photo": "eris.jpg",
+      "rings": null, "photo": "eris.png",
       "moons": [
         { "id": "dysnomia", "name": "Disnômia", "dist": 37273, "size": 0.684, "color": "#AAAAAA", "side": 1 }
       ]
