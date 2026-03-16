@@ -1,0 +1,48 @@
+{
+  "facts": [
+    {
+      "dist": 1000000,
+      "text": "Você parte do Sol — 1,4 milhão de km de diâmetro, 99,8% da massa de todo o sistema solar. Se o Sol fosse uma bola de praia, a Terra seria um grão de areia a 24 metros de distância. Rumo a Mercúrio."
+    },
+    {
+      "dist": 57900000,
+      "text": "Mercúrio. Sem atmosfera para reter calor, a temperatura oscila entre −180 °C à noite e +430 °C de dia — a maior variação do sistema solar. A luz do Sol leva 3 minutos para chegar aqui. Próxima parada: Vênus."
+    },
+    {
+      "dist": 108200000,
+      "text": "Vênus — quase do mesmo tamanho que a Terra, mas com atmosfera densa de CO₂. O efeito estufa é tão intenso que a temperatura é constante: 470 °C, suficiente para derreter chumbo. A Terra está logo à frente."
+    },
+    {
+      "dist": 149597871,
+      "text": "A Terra — o Pálido Ponto Azul. Toda a história, toda arte, toda guerra e toda vida conhecida existiram neste único ponto do universo. A partir daqui, usamos 1 UA como unidade de medida. Próxima parada: Marte."
+    },
+    {
+      "dist": 227900000,
+      "text": "Marte. O Monte Olimpo tem 22 km de altitude — três vezes o Everest — e é o maior vulcão conhecido no sistema solar. Tempestades de areia podem cobrir o planeta inteiro por meses. À frente: o Cinturão de Asteroides."
+    },
+    {
+      "dist": 400000000,
+      "text": "Cinturão de Asteroides. Ao contrário dos filmes, é quase vazio: se você lançasse um objeto aleatório aqui, a chance de atingir um asteroide seria de 1 em 1 bilhão. As sondas Voyager o cruzaram sem desviar de nenhum objeto. Próxima parada: Júpiter."
+    },
+    {
+      "dist": 778500000,
+      "text": "Júpiter — o gigante. Sua massa é 2,5 vezes a soma de todos os outros planetas juntos. A Grande Mancha Vermelha é uma tempestade ativa há mais de 350 anos, maior que a Terra inteira. A partir daqui, as distâncias ficam colossais."
+    },
+    {
+      "dist": 1433400000,
+      "text": "Saturno. Seus anéis têm 270.000 km de largura — mas apenas 1 km de espessura. É como uma folha de papel ampliada para o tamanho de um campo de futebol. A luz do Sol leva 1 hora e 20 minutos para chegar aqui. Próxima: Urano."
+    },
+    {
+      "dist": 2872500000,
+      "text": "Urano. A quase 3 bilhões de km do Sol, a luz leva 2 horas e 40 minutos para chegar aqui. O planeta gira completamente de lado: seu eixo está inclinado 98°, como se tivesse sido derrubado por um impacto colossal. Próxima: Netuno."
+    },
+    {
+      "dist": 4495100000,
+      "text": "Netuno — o último gigante de gelo. Seus ventos chegam a 2.100 km/h, os mais rápidos do sistema solar. A Voyager 2, lançada em 1977, levou 12 anos para chegar aqui — e nunca mais voltou. Última parada: Plutão."
+    },
+    {
+      "dist": 5906400000,
+      "text": "Plutão — o pequeno mundo gelado no limite do sistema solar. A luz do Sol leva 5 horas e 30 minutos para chegar aqui, chegando 1.600 vezes mais fraca que na Terra. Daqui, o Sol parece apenas uma estrela muito brilhante entre milhares."
+    }
+  ]
+}

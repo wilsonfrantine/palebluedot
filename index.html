@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O Pálido Ponto Azul - Simulador de Escala Astronômica</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="star-field"></div>
+
+    <!-- Minimapa do Sistema Solar -->
+    <div id="minimap-container">
+        <button id="minimap-toggle" title="Mostrar/ocultar mapa">⊙</button>
+        <div id="minimap-header">SISTEMA SOLAR</div>
+        <div id="minimap-canvas">
+            <div id="minimap-zones"></div>
+            <div id="minimap-bodies"></div>
+            <div id="minimap-cursor"></div>
+        </div>
+        <div id="minimap-you-row">
+            <span id="minimap-you-label">▲ VOCÊ ESTÁ AQUI</span>
+        </div>
+        <div id="nav-row">
+            <button id="nav-prev" class="nav-arrow-btn">
+                <span class="nav-dir">◀</span>
+                <span id="nav-prev-name"></span>
+            </button>
+            <span id="nav-current-name"></span>
+            <button id="nav-next" class="nav-arrow-btn">
+                <span id="nav-next-name"></span>
+                <span class="nav-dir">▶</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Botão de Configurações -->
+    <button id="settings-toggle" title="Configurações">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <line x1="0" y1="1" x2="16" y2="1"/>
+            <line x1="0" y1="6" x2="16" y2="6"/>
+            <line x1="0" y1="11" x2="16" y2="11"/>
+        </svg>
+    </button>
+
+    <!-- Painel de Configurações -->
+    <div id="settings-panel">
+        <h3>Configurações</h3>
+        <div class="setting-item">
+            <label>Sensibilidade do Scroll</label>
+            <input type="range" id="sensitivity-slider" min="0.1" max="10" step="0.1" value="1">
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-section-title">Dicas de Navegação</div>
+        <div class="setting-item">
+            <label>Waypoints de ajuda</label>
+            <button id="reset-hints-btn" class="settings-action-btn">Reativar</button>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-section-title">Controles</div>
+        <div class="settings-help-grid">
+            <span class="help-key">Arrastar</span>
+            <span class="help-desc">Navegar pelo espaço</span>
+            <span class="help-key">Scroll</span>
+            <span class="help-desc">Avançar ou recuar</span>
+            <span class="help-key">Ctrl + Scroll</span>
+            <span class="help-desc">Ampliar ou reduzir</span>
+            <span class="help-key">Clique num astro</span>
+            <span class="help-desc">Zoom automático</span>
+            <span class="help-key">◀ ▶ Setas</span>
+            <span class="help-desc">Planeta anterior / próximo</span>
+            <span class="help-key">⚡ Vel. Luz</span>
+            <span class="help-desc">Viagem automática em tempo real</span>
+        </div>
+    </div>
+
+    <!-- Botão de Velocidade da Luz -->
+    <button id="lightspeed-btn" class="intro" title="Velocidade da Luz">
+        <span id="photon" class="btn-icon">⚡</span>
+        <span id="lightspeed-text">VELOCIDADE DA LUZ</span>
+    </button>
+
+    <button id="zoom-out-btn">SAIR DE ÓRBITA</button>
+
+    <!-- O Universo -->
+    <div id="universe"></div>
+
+
+<!-- Régua Astronômica Inferior -->
+    <div id="astronomical-ruler">
+        <div id="zone-indicator"></div>
+        <div class="ruler-ticks" id="ruler-ticks"></div>
+        <div id="info-display"></div>
+        <button id="credits-toggle" title="Créditos">©</button>
+    </div>
+
+    <!-- Tela Inicial: Pálido Ponto Azul -->
+    <div id="welcome-overlay">
+        <div id="pale-blue-dot-sim">
+            <div class="sun-beam"></div>
+            <div id="the-dot"></div>
+        </div>
+        <h1 id="welcome-title">O PÁLIDO PONTO AZUL</h1>
+        <p id="welcome-subtitle">Simulador de Escala Astronômica</p>
+        <div id="welcome-actions">
+            <button id="start-btn">INICIAR JORNADA</button>
+        </div>
+    </div>
+
+    <!-- Painel de Detalhes do Planeta -->
+    <div id="planet-detail-panel">
+        <button id="detail-collapse-btn" title="Recolher painel">◀</button>
+        <div id="planet-detail-inner">
+            <button id="planet-detail-close">✕</button>
+            <div id="planet-detail-visual"></div>
+            <div id="planet-detail-type"></div>
+            <div id="planet-detail-name"></div>
+            <div id="planet-detail-desc"></div>
+            <div id="planet-detail-stats"></div>
+            <div id="planet-detail-moons-list"></div>
+        </div>
+    </div>
+
+    <!-- Overlay de Mensagens Centrais -->
+    <div id="msg-overlay"></div>
+
+    <!-- Painel de Créditos -->
+    <div id="credits-panel">
+        <div id="credits-box">
+            <button id="credits-close">✕</button>
+            <div class="credits-title">O PÁLIDO PONTO AZUL</div>
+            <div class="credits-subtitle">Simulador de Escala Astronômica</div>
+            <div class="credits-section">
+                <div class="credits-label">INSPIRAÇÃO</div>
+                <div class="credits-value">Baseado em <em>If the Moon Was a Pixel</em><br>de Josh Worth — expandido e melhorado</div>
+            </div>
+            <div class="credits-section">
+                <div class="credits-label">IMAGENS</div>
+                <div class="credits-value">NASA · JPL · ESA · Domínio Público</div>
+            </div>
+            <div class="credits-section">
+                <div class="credits-label">CÓDIGO</div>
+                <div class="credits-value">
+                    Wilson Frantine<br>
+                    <a href="https://github.com/wilsonfrantine" target="_blank" rel="noopener">github.com/wilsonfrantine</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "stops": [
+    { "id": "sun",     "scale": 3000, "holdDelay": 30000 },
+    { "id": "mercury", "scale": 80,   "holdDelay": 20000 },
+    { "id": "venus",   "scale": 80,   "holdDelay": 20000 },
+    { "id": "earth",   "scale": 60,   "holdDelay": 20000 },
+    { "id": "mars",    "scale": 80,   "holdDelay": 20000 },
+    { "id": "jupiter", "scale": 200,  "holdDelay": 20000 },
+    { "id": "saturn",  "scale": 200,  "holdDelay": 20000 },
+    { "id": "uranus",  "scale": 250,  "holdDelay": 20000 },
+    { "id": "neptune", "scale": 250,  "holdDelay": 20000 },
+    { "id": "pluto",   "scale": 30,   "holdDelay": 30000 }
+  ],
+  "descriptions": {
+    "sun":     "O coração do sistema solar. 99,8% de toda a massa está aqui. Se o Sol fosse uma bola de praia, a Terra seria um grão de areia a 24 metros de distância.",
+    "mercury": "Variação de 600 °C entre o dia e a noite. Sem atmosfera para reter calor, este é o extremo térmico do sistema interior.",
+    "venus":   "Quente o suficiente para derreter chumbo — constantemente, dia e noite. O efeito estufa levado ao limite absoluto.",
+    "earth":   "Toda a história da humanidade — cada guerra, cada descoberta, cada vida — aconteceu aqui, neste único ponto azul pálido.",
+    "mars":    "O Monte Olimpo tem 22 km de altitude, três vezes o Everest. Nosso próximo destino de exploração humana.",
+    "jupiter": "Uma tempestade maior que a Terra, ativa há mais de 350 anos. 95 luas conhecidas orbitam este gigante.",
+    "saturn":  "Anéis com 270.000 km de largura e apenas 1 km de espessura. Tão leve que flutuaria em um oceano.",
+    "uranus":  "Girado de lado por um impacto primordial — seu eixo está inclinado 98°. Um gigante de gelo virado ao avesso.",
+    "neptune": "Ventos de 2.100 km/h, os mais rápidos do sistema solar. A Voyager 2 levou 12 anos para chegar aqui.",
+    "pluto":   "O fim do sistema solar conhecido. Além daqui, 4,22 anos-luz de vazio absoluto até Proxima Centauri."
+  }
+}

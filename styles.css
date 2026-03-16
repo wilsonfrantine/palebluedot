@@ -1,0 +1,1522 @@
+/* styles.css - O Pálido Ponto Azul v4.0 */
+
+:root {
+    --bg-color: #000;
+    --text-color: #fff;
+    --accent-color: #00aaff;
+    --panel-bg: rgba(0, 0, 0, 0.9);
+    --ruler-h: 15vh;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* ─── Campo de Estrelas ─────────────────────────────────────────── */
+
+#star-field {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: pulse var(--pulse-duration) infinite alternate;
+    transition: transform 0.6s ease-out, opacity 0.4s, border-radius 0.5s ease-out;
+    transform-origin: right center;
+}
+
+/* ─── Velocidade da Luz: cauda gradiente + glow por camada ──────── */
+/*
+ * transform-origin: right center → scaleX expande para a esquerda.
+ * Cabeça da estrela fica à direita (direção do movimento),
+ * cauda gradiente se estende para a esquerda (atrás).
+ */
+#star-field.warp-active .star {
+    border-radius: 0;
+    background: linear-gradient(to left, white, transparent);
+    transform: scaleX(var(--trail-len, 1)) scaleY(0.15);
+    opacity: 0.85;
+    animation: none;
+}
+
+/* Glow + Doppler blueshift — camada próxima (frente) */
+#star-field.warp-active .star-layer-0 {
+    filter: drop-shadow(0 0 2px rgba(140, 200, 255, 0.8)) hue-rotate(200deg) saturate(1.5);
+}
+
+/* Glow neutro — camada média */
+#star-field.warp-active .star-layer-1 {
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.5));
+}
+
+/* Glow + Doppler redshift — camada distante (atrás) */
+#star-field.warp-active .star-layer-2 {
+    filter: drop-shadow(0 0 1px rgba(255, 170, 100, 0.5)) hue-rotate(-15deg) sepia(0.35);
+}
+
+/* Star layer movement driven by JS in animate() */
+
+
+@keyframes pulse {
+    from { opacity: 0.2; }
+    to   { opacity: 1; }
+}
+
+/* ─── Universo ──────────────────────────────────────────────────── */
+
+#universe {
+    position: relative;
+    height: 100vh;
+    width: 2500000px;
+    display: flex;
+    align-items: center;
+    cursor: grab;
+}
+
+body.dragging #universe { cursor: grabbing; }
+
+/* ─── Partículas de Asteroide ───────────────────────────────────── */
+
+.asteroid-particle {
+    position: absolute;
+    background: rgba(180, 160, 120, 0.7);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+
+/* ─── Zonas Solares (cinturões) ─────────────────────────────────── */
+
+.solar-zone {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.zone-label {
+    position: absolute;
+    top: 80px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(255, 220, 160, 0.4);
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.zone-label-start { left: 8px; }
+.zone-label-end   { right: 8px; }
+
+/* ─── Corpos Celestes ───────────────────────────────────────────── */
+
+.celestial-container {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateX(-50%);
+    z-index: 1;
+}
+
+.celestial-body {
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.celestial-body:hover { transform: scale(1.2); }
+
+/* ─── Sol: brilho pulsante ──────────────────────────────────────── */
+
+#body-sun {
+    animation: sun-glow 4s ease-in-out infinite alternate;
+    overflow: visible;
+}
+
+@keyframes sun-glow {
+    from {
+        box-shadow:
+            0 0 40px 12px  rgba(253, 200,  60, 0.45),
+            0 0 100px 30px rgba(253, 160,  20, 0.20),
+            0 0 200px 60px rgba(253, 120,   0, 0.08);
+        filter: brightness(1.0) saturate(1.0);
+    }
+    to {
+        box-shadow:
+            0 0 70px 22px  rgba(253, 210,  80, 0.65),
+            0 0 160px 55px rgba(253, 170,  30, 0.30),
+            0 0 320px 100px rgba(253, 130,  0, 0.12);
+        filter: brightness(1.12) saturate(1.15);
+    }
+}
+
+.planet-rings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateX(72deg);
+    border-radius: 50%;
+    border: 2px solid;  /* cor definida inline via JS */
+    pointer-events: none;
+}
+
+/* ─── Anéis de Saturno (três camadas) ───────────────────────────── */
+
+/* Anéis individuais — tamanho definido via JS */
+.planet-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateX(72deg);
+    border-radius: 50%;
+    border-style: solid;
+    pointer-events: none;
+}
+
+/* Tampa superior: cobre a metade superior dos anéis,
+   criando a ilusão de que os anéis passam por trás do planeta */
+.saturn-top-cover {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+    z-index: 2;
+    pointer-events: none;
+    background-size: cover;
+    background-position: center;
+}
+
+.label {
+    position: absolute;
+    top: -60px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.3s;
+}
+
+.label:hover { color: var(--accent-color); }
+
+/* ─── Luas ──────────────────────────────────────────────────────── */
+
+.moon-container {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateX(-50%);
+    z-index: 2;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.moon-body {
+    border-radius: 50%;
+    opacity: 0.8;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.moon-container:hover .moon-body {
+    transform: scale(1.6);
+    opacity: 1;
+}
+
+.moon-label {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: #667;
+    white-space: nowrap;
+    margin-top: 3px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+}
+
+.moon-container:hover .moon-label {
+    color: var(--accent-color);
+}
+
+/* ─── Info Card Zoomed ──────────────────────────────────────────── */
+
+.planet-info-zoomed {
+    position: absolute;
+    top: 60px;
+    background: rgba(4, 8, 20, 0.9);
+    border: 1px solid rgba(0, 170, 255, 0.3);
+    padding: 15px;
+    min-width: 200px;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 3;
+}
+
+.planet-info-zoomed.visible { opacity: 1; }
+
+.zoomed-stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    letter-spacing: 1px;
+}
+
+.zoomed-stat-label { color: #4a6a8a; text-transform: uppercase; }
+.zoomed-stat-value { color: var(--accent-color); }
+
+/* ─── Minimapa ──────────────────────────────────────────────────── */
+
+#minimap-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: calc(100% - 56px); /* leaves room for settings toggle */
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.88) 75%, rgba(0, 0, 0, 0.4) 100%);
+    padding: 10px 20px 8px;
+    z-index: 2000;
+    transition: padding 0.3s, background 0.2s;
+}
+
+/* Minimap toggle button — always visible */
+#minimap-toggle {
+    display: inline-flex;
+    background: none;
+    border: none;
+    color: #445566;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+#minimap-toggle:hover { color: var(--accent-color); }
+
+/* Collapsed minimap — works on all screen sizes */
+#minimap-container.collapsed #minimap-canvas,
+#minimap-container.collapsed #minimap-you-row,
+#minimap-container.collapsed #nav-row { display: none; }
+
+#minimap-container.collapsed { padding: 6px 14px; }
+
+/* When expanded on small screens, float over everything */
+@media (max-width: 600px) {
+    #minimap-container:not(.collapsed) { z-index: 9000; }
+}
+
+#minimap-header {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: #445566;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#minimap-canvas {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    overflow: visible;
+}
+
+/* Zonas no minimapa */
+#minimap-zones {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+}
+
+.minimap-zone {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 25%;
+    min-height: 4px;
+    overflow: visible;
+}
+
+.minimap-zone-label {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: rgba(255, 220, 160, 0.45);
+    white-space: nowrap;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+/* Corpos no minimapa */
+#minimap-bodies {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+}
+
+/* Wrapper com área de clique ampla */
+.minimap-body {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px 5px;
+    z-index: 2;
+}
+
+.minimap-dot-visual {
+    border-radius: 50%;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+}
+
+.minimap-body:hover .minimap-dot-visual {
+    transform: scale(1.8);
+}
+
+.minimap-body.active .minimap-dot-visual {
+    box-shadow: 0 0 6px currentColor;
+    transform: scale(1.4);
+}
+
+.minimap-dot-label {
+    position: absolute;
+    bottom: calc(100% - 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #6688aa;
+    white-space: nowrap;
+    pointer-events: none;
+    text-transform: uppercase;
+}
+
+/* Cursor — linha vertical */
+#minimap-cursor {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 1px;
+    background: var(--accent-color);
+    z-index: 4;
+    pointer-events: none;
+    box-shadow: 0 0 4px var(--accent-color);
+}
+
+/* "VOCÊ ESTÁ AQUI" abaixo da barra */
+#minimap-you-row {
+    position: relative;
+    width: 100%;
+    height: 18px;
+    margin-top: 2px;
+    pointer-events: none;
+}
+
+#minimap-you-label {
+    position: absolute;
+    top: 0;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--accent-color);
+    white-space: nowrap;
+    transform: translateX(-50%);
+    opacity: 0.85;
+}
+
+/* ─── Navegação Anterior / Próximo ──────────────────────────────── */
+
+#nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 0 0;
+    margin-top: 1px;
+}
+
+.nav-arrow-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    color: #5a7a9a;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 3px 4px;
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+.nav-arrow-btn:hover { color: var(--accent-color); }
+
+.nav-dir {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+#nav-current-name {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
+/* ─── Régua e Info ──────────────────────────────────────────────── */
+
+#astronomical-ruler {
+    position: fixed;
+    bottom: 0; left: 0; width: 100%; height: var(--ruler-h);
+    background: rgba(0, 0, 0, 0.95);
+    border-top: 1px solid #1a1a2e;
+    z-index: 1000;
+    padding: 6px 20px 10px;
+}
+
+#zone-indicator {
+    font-size: 8px;
+    letter-spacing: 4px;
+    color: rgba(255, 220, 160, 0.55);
+    text-transform: uppercase;
+    text-align: center;
+    padding-bottom: 4px;
+    display: none;
+}
+
+.ruler-ticks {
+    position: relative;
+    width: 100%;
+    height: 40px;
+    margin-bottom: 10px;
+}
+
+.tick {
+    position: absolute;
+    bottom: 0;
+    width: 1px;
+    height: 15px;
+    background: #444;
+}
+
+.tick.major { height: 25px; background: var(--accent-color); }
+
+.tick-label {
+    position: absolute;
+    bottom: 30px;
+    font-size: 10px;
+    color: #889;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    letter-spacing: 1px;
+}
+
+#info-display {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid #0e0e1a;
+    padding-top: 10px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0 12px;
+    border-right: 1px solid #0e0e1a;
+}
+
+.info-item:last-child { border-right: none; }
+
+.info-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #4a6a8a;
+    text-transform: uppercase;
+}
+
+.info-value {
+    font-size: 15px;
+    color: var(--accent-color);
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+/* ─── Tela Inicial ──────────────────────────────────────────────── */
+
+#welcome-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #000;
+    z-index: 5000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#pale-blue-dot-sim {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    height: 200px;
+    /*overflow: hidden;*/
+    margin-bottom: 48px;
+}
+
+.sun-beam {
+    position: absolute;
+    width: 200%;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.028);
+    transform: rotate(115deg);
+    transform-origin: 53% 50%;
+    top: 44%;
+    left: -50%;
+    box-shadow: 0 0 40px 10px rgba(255, 200, 120, 0.035);
+}
+
+#the-dot {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: #aabfff;
+    top: 50%;
+    left: 56%;
+    box-shadow: 0 0 6px 2px rgba(170, 190, 255, 0.85);
+}
+
+#welcome-title {
+    font-size: 20px;
+    letter-spacing: 10px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.82);
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0 0 10px;
+}
+
+#welcome-subtitle {
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: rgba(255, 255, 255, 0.18);
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0 0 44px;
+    font-weight: 400;
+}
+
+#welcome-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+#start-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 170, 255, 0.5);
+    color: rgba(0, 170, 255, 0.7);
+    padding: 14px 44px;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    transition: 0.4s;
+    font-weight: 500;
+}
+
+#start-btn:hover {
+    background: rgba(0, 170, 255, 0.08);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+
+/* ─── Configurações ─────────────────────────────────────────────── */
+
+#settings-toggle {
+    position: fixed;
+    top: 16px; right: 12px;
+    background: none;
+    border: none;
+    color: #334;
+    cursor: pointer;
+    z-index: 2100;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.3s;
+    padding: 0;
+}
+
+#settings-toggle:hover { color: var(--accent-color); }
+
+#settings-panel {
+    position: fixed;
+    top: 62px; right: 16px;
+    background: rgba(4, 8, 18, 0.97);
+    border: 1px solid rgba(0, 170, 255, 0.1);
+    padding: 20px 24px;
+    z-index: 2050;
+    min-width: 260px;
+    display: none;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.9);
+}
+
+#settings-panel.open { display: block; }
+
+#settings-panel h3 {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #0e0e1a;
+    text-transform: uppercase;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
+.setting-item label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #555;
+    text-transform: uppercase;
+    flex: 1;
+}
+
+.setting-item input[type="range"] {
+    width: 96px;
+    accent-color: var(--accent-color);
+    cursor: pointer;
+}
+
+.settings-divider {
+    height: 1px;
+    background: #0e0e1a;
+    margin: 4px 0 16px;
+}
+
+.settings-section-title {
+    font-size: 7px;
+    letter-spacing: 4px;
+    color: #222;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+}
+
+.settings-action-btn {
+    background: none;
+    border: 1px solid #222;
+    color: #334;
+    font-family: inherit;
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.settings-action-btn:hover { border-color: rgba(0,170,255,0.3); color: rgba(0,170,255,0.6); }
+
+.settings-help-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 9px 14px;
+    align-items: center;
+}
+
+.help-key {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: #3a3a4a;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.help-desc {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: #2a2a3a;
+    text-transform: uppercase;
+}
+
+/* ─── Velocidade da Luz ─────────────────────────────────────────── */
+
+#lightspeed-btn {
+    position: fixed;
+    bottom: calc(var(--ruler-h) + 10px); right: 16px;
+    background: rgba(4, 8, 18, 0.95);
+    border: 1px solid #333;
+    color: #556;
+    padding: 9px 11px;
+    font-family: inherit;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 2050;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow: hidden;
+    max-width: 42px;
+    transition: max-width 0.35s ease, color 0.3s, border-color 0.3s, gap 0.35s, box-shadow 0.3s;
+    white-space: nowrap;
+    border-radius: 2px;
+}
+
+#lightspeed-btn:hover {
+    max-width: 240px;
+    gap: 10px;
+    color: #aaa;
+    border-color: #555;
+}
+
+#lightspeed-text {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.15s 0.15s;
+    overflow: hidden;
+}
+
+#lightspeed-btn:hover #lightspeed-text { opacity: 1; }
+
+#lightspeed-btn.intro {
+    bottom: 50%; right: 50%;
+    transform: translate(50%, 50%);
+    max-width: 280px;
+    gap: 12px;
+    font-size: 20px;
+    border-color: var(--accent-color);
+    color: rgba(0, 170, 255, 0.8);
+    box-shadow: 0 0 30px rgba(0, 170, 255, 0.2);
+}
+
+#lightspeed-btn.intro #lightspeed-text { opacity: 1; }
+
+#lightspeed-btn.active {
+    color: var(--accent-color);
+    border-color: rgba(0, 170, 255, 0.5);
+    box-shadow: 0 0 12px rgba(0, 170, 255, 0.2), inset 0 0 12px rgba(0, 170, 255, 0.05);
+}
+
+.btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+#photon {
+    font-style: normal;
+    transition: text-shadow 0.3s;
+}
+
+#photon.active {
+    text-shadow: 0 0 8px rgba(0, 170, 255, 0.9), 0 0 20px rgba(0, 170, 255, 0.5);
+    animation: photon-wave 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes photon-wave {
+    from { transform: scale(0.9); }
+    to   { transform: scale(1.1); }
+}
+
+/* ─── Zoom Out ──────────────────────────────────────────────────── */
+
+#zoom-out-btn {
+    position: fixed;
+    bottom: calc(var(--ruler-h) + 60px); right: 16px;
+    background: rgba(4, 8, 18, 0.95);
+    border: 1px solid #333;
+    color: #aaa;
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 9px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    z-index: 2050;
+    display: none;
+    transition: all 0.3s;
+    border-radius: 2px;
+}
+
+#zoom-out-btn:hover { border-color: var(--accent-color); color: #fff; }
+
+/* ─── Label especial de Plutão ──────────────────────────────────── */
+
+.pluto-love {
+    position: absolute;
+    top: 44px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255, 180, 180, 0.45);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* ─── Fim da Jornada ────────────────────────────────────────────── */
+
+.journey-end {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.journey-end-line {
+    width: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.journey-end-content {
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    max-width: 320px;
+}
+
+.journey-end-title {
+    font-size: 9px;
+    letter-spacing: 5px;
+    color: rgba(255, 255, 255, 0.25);
+    text-transform: uppercase;
+}
+
+.journey-end-next {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.18);
+    text-transform: uppercase;
+}
+
+.journey-end-star {
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.journey-end-dist {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(0, 170, 255, 0.55);
+}
+
+
+/* ─── Marcos de Viagem (texto inline no espaço) ─────────────────── */
+
+.journey-waypoint {
+    position: absolute;
+    top: calc(50% - 80px);
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding-left: 14px;
+    border-left: 1px solid rgba(255, 255, 255, 0.07);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.wp-label {
+    font-size: 18px;
+    letter-spacing: 4px;
+    color: rgba(255, 255, 255, 0.38);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.wp-dist {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(0, 170, 255, 0.55);
+    text-transform: uppercase;
+}
+
+.wp-detail {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.16);
+    text-transform: uppercase;
+}
+
+/* Help waypoints: enable pointer events for dismiss button */
+.help-waypoint {
+    pointer-events: auto;
+}
+
+.wp-dismiss-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.2);
+    font-family: inherit;
+    font-size: 7px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    align-self: flex-start;
+}
+
+.wp-dismiss-btn:hover {
+    color: rgba(255, 255, 255, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Painel de Detalhes do Planeta ─────────────────────────────── */
+
+#planet-detail-panel {
+    position: fixed;
+    top: 110px;
+    left: -360px;
+    width: 340px;
+    bottom: calc(var(--ruler-h) + 10px);
+    background: rgba(3, 6, 14, 0.98);
+    border-right: 1px solid rgba(0, 170, 255, 0.1);
+    overflow: visible;   /* allows collapse button to stick out */
+    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9800;       /* above everything */
+}
+
+#planet-detail-panel.open { left: 0; }
+
+/* Fully off-screen when collapsed — button (right: -24px, width 24px)
+   sticks out at screen x ≈ 0 so it's always reachable */
+#planet-detail-panel.open.collapsed { left: -340px; }
+
+/* Wrapper for scrollable content */
+#planet-detail-inner {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #111 transparent;
+    padding: 20px 18px 20px;
+}
+
+/* Collapse / expand tab — protrudes from right edge of panel.
+   When panel is fully collapsed (left:-340px), this button sits at
+   screen x ≈ 0 so it is always reachable. */
+#detail-collapse-btn {
+    position: absolute;
+    top: 50%;
+    right: -24px;        /* protrudes 24px beyond panel's right edge */
+    transform: translateY(-50%);
+    width: 24px;
+    height: 56px;
+    background: rgba(3, 6, 14, 0.97);
+    border: 1px solid rgba(0, 170, 255, 0.12);
+    border-left: none;
+    color: #2a4a6a;
+    font-size: 9px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, background 0.2s;
+    font-family: inherit;
+    padding: 0;
+}
+
+#detail-collapse-btn:hover {
+    color: rgba(0, 170, 255, 0.7);
+    background: rgba(0, 20, 40, 0.99);
+}
+
+#planet-detail-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #222;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+}
+
+#planet-detail-close:hover { color: var(--accent-color); }
+
+/* Visual: esfera + luas */
+#planet-detail-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 24px 0 20px;
+}
+
+.pdv-sphere {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.pdv-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotateX(70deg);
+    width: 158%;
+    height: 158%;
+    border-radius: 50%;
+    border: 3px solid;
+    pointer-events: none;
+}
+
+/* Anéis Saturn no painel de detalhes */
+.pdv-ring-c { width: 143%; height: 143%; border-width: 2px !important; border-color: rgba(130, 100, 65, 0.18) !important; }
+.pdv-ring-b { width: 175%; height: 175%; border-width: 6px !important; border-color: rgba(195, 162, 96, 0.43) !important; }
+.pdv-ring-a { width: 214%; height: 214%; border-width: 4px !important; border-color: rgba(218, 198, 145, 0.34) !important; }
+
+/* Tampa superior para o painel de detalhes */
+.pdv-top-cover {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+    z-index: 2;
+    pointer-events: none;
+    background-size: cover;
+    background-position: center;
+}
+
+.pdv-moon-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pdv-moon-dot {
+    border-radius: 50%;
+    opacity: 0.75;
+    flex-shrink: 0;
+}
+
+#planet-detail-type {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(0, 170, 255, 0.4);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+#planet-detail-name {
+    font-size: 20px;
+    letter-spacing: 4px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+
+#planet-detail-desc {
+    font-size: 12px;
+    letter-spacing: 0.2px;
+    color: #445566;
+    line-height: 1.85;
+    margin-bottom: 20px;
+    border-top: 1px solid #0a0a16;
+    padding-top: 14px;
+}
+
+#planet-detail-stats {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.detail-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 1px solid #080810;
+    gap: 6px;
+}
+
+.detail-stat-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #2a3e50;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.detail-stat-value {
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: rgba(0, 170, 255, 0.65);
+    text-align: right;
+}
+
+.detail-section-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #1a2530;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #0a0a16;
+}
+
+.detail-moon-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid #06060e;
+}
+
+.detail-moon-swatch {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0.65;
+}
+
+.detail-moon-name {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #2d4055;
+    text-transform: uppercase;
+    flex: 1;
+}
+
+.detail-moon-dist {
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: #182028;
+}
+
+/* ─── Overlay de Mensagens Centrais ────────────────────────────── */
+
+#msg-overlay {
+    position: fixed;
+    bottom: calc(var(--ruler-h) + 20px);
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 600px;
+    width: calc(100% - 80px);
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    line-height: 1.85;
+    color: rgba(255, 255, 255, 0.78);
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 3500;
+    white-space: pre-line;
+    display: none;
+}
+
+#msg-overlay.visible { display: block; }
+
+#msg-overlay.fade-out {
+    animation: msg-fade 0.7s forwards;
+}
+
+@keyframes msg-fade {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+/* waypoints remain visible during lightspeed — user can see them while passing */
+
+/* ─── Asteroides Grandes (flyby) ────────────────────────────────── */
+
+.large-asteroid {
+    position: absolute;
+    width: var(--ast-size);
+    height: calc(var(--ast-size) * 0.7);
+    background: radial-gradient(ellipse at 38% 32%, #666 0%, #3a3530 55%, transparent 90%);
+    pointer-events: none;
+    z-index: 1;
+    transform: translateX(-50%) translateY(-50%);
+    opacity: 0.85;
+}
+
+/* ─── Créditos ───────────────────────────────────────────────────── */
+
+#credits-toggle {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+    background: none;
+    border: 1px solid #1a1a2e;
+    color: #223;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    cursor: pointer;
+    z-index: 10;
+    transition: 0.3s;
+    line-height: 1;
+}
+
+#credits-toggle:hover {
+    border-color: rgba(0, 170, 255, 0.2);
+    color: rgba(0, 170, 255, 0.5);
+}
+
+#credits-panel {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 5500;
+    background: rgba(0, 0, 0, 0.80);
+}
+
+#credits-panel.visible { display: flex; }
+
+#credits-box {
+    background: rgba(3, 6, 14, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 44px 52px;
+    max-width: 420px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: relative;
+}
+
+#credits-close {
+    position: absolute;
+    top: 14px; right: 16px;
+    background: none;
+    border: none;
+    color: #2a3a4a;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+#credits-close:hover { color: rgba(0, 170, 255, 0.6); }
+
+.credits-title {
+    font-size: 11px;
+    letter-spacing: 7px;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase;
+}
+
+.credits-subtitle {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #2a3a4a;
+    text-transform: uppercase;
+    margin-top: -18px;
+}
+
+.credits-section {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.credits-label {
+    font-size: 8px;
+    letter-spacing: 4px;
+    color: rgba(0, 170, 255, 0.35);
+    text-transform: uppercase;
+}
+
+.credits-value {
+    font-size: 12px;
+    color: #3a5a7a;
+    line-height: 1.8;
+}
+
+.credits-value em {
+    font-style: normal;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.credits-value a {
+    color: rgba(0, 170, 255, 0.5);
+    text-decoration: none;
+    letter-spacing: 0.5px;
+}
+
+.credits-value a:hover { color: rgba(0, 170, 255, 0.9); }
+
+/* ─── Moon thumbnail in detail panel ────────────────────────────── */
+
+.detail-moon-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    opacity: 0.85;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ─── Responsive: Mobile & Tablet ───────────────────────────────── */
+
+/* ---------- Shared small-screen adjustments (≤ 900px) ----------- */
+@media (max-width: 900px) {
+    :root { --ruler-h: 12vh; }
+
+    /* Keep minimap full-width so outer planets don't crowd */
+    #minimap-container { width: calc(100% - 56px); }
+
+    .info-value { font-size: 12px; }
+    .info-label { font-size: 8px; }
+
+    /* Truncate minimap labels to first letter to prevent overlap */
+    .minimap-dot-label {
+        overflow: hidden;
+        max-width: 8px;
+        letter-spacing: 0;
+    }
+
+    #zoom-out-btn { font-size: 8px; padding: 8px 18px; }
+}
+
+/* ---------- Tablet portrait (≤ 768px) --------------------------- */
+@media (max-width: 768px) {
+    /* Hide UA and Ano-Luz info, keep Distância + Tempo de Luz */
+    .info-item:nth-child(2),
+    .info-item:nth-child(3) { display: none; }
+
+    #settings-panel { width: 240px; right: 0; border-radius: 0; }
+
+    #msg-overlay { font-size: 12px; width: calc(100% - 40px); }
+}
+
+/* ---------- Phone (≤ 600px): collapsible minimap + lateral panel - */
+@media (max-width: 600px) {
+    :root { --ruler-h: 13vh; }
+
+    /* When expanded on small screens, float over everything */
+    #minimap-container:not(.collapsed) {
+        z-index: 9000;
+        width: calc(100% - 56px);
+    }
+
+    /* Detail panel stays on the left, lateral collapse only */
+    #planet-detail-panel {
+        top: 0;
+        width: 85vw;
+        left: calc(-85vw - 30px); /* fully off + button clearance */
+        bottom: var(--ruler-h);
+    }
+
+    #planet-detail-panel.open { left: 0; }
+
+    /* Fully collapsed: off-screen, button visible at x≈0 */
+    #planet-detail-panel.open.collapsed { left: calc(-85vw - 6px); }
+
+    /* Button still protrudes at right: -24px — no change needed */
+
+    .info-item:nth-child(2),
+    .info-item:nth-child(3) { display: none; }
+
+    #msg-overlay {
+        font-size: 11px;
+        width: calc(100% - 24px);
+    }
+
+    #settings-panel {
+        width: 100%;
+        right: 0;
+        top: 0;
+        border-radius: 0;
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+
+    #credits-panel { align-items: flex-end; }
+    #credits-box {
+        width: 100%;
+        max-width: 100%;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        padding: 32px 24px 28px;
+    }
+}
+
+/* ---------- Phone landscape (height ≤ 440px) --------------------- */
+@media (max-height: 440px) and (orientation: landscape) {
+    :root { --ruler-h: 90px; }
+
+    #minimap-toggle { display: inline-flex; }
+
+    #planet-detail-panel { top: 0; bottom: var(--ruler-h); }
+
+    .info-item:nth-child(3) { display: none; }
+
+    #settings-toggle { top: 8px; right: 8px; }
+
+    #msg-overlay { font-size: 11px; }
+}

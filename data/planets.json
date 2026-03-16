@@ -1,0 +1,141 @@
+{
+  "bodies": [
+    {
+      "id": "sun", "name": "Sol", "dist": 0, "size": 1392, "color": "#FDB813",
+      "rings": null, "photo": "sun.png", "moons": []
+    },
+    {
+      "id": "mercury", "name": "Mercúrio", "dist": 57900000, "size": 4.8, "color": "#A5A5A5",
+      "rings": null, "photo": "mercury.jpg", "moons": []
+    },
+    {
+      "id": "venus", "name": "Vênus", "dist": 108200000, "size": 12.1, "color": "#E3BB76",
+      "rings": null, "photo": "venus.jpg", "moons": []
+    },
+    {
+      "id": "earth", "name": "Terra", "dist": 149597871, "size": 12.7, "color": "#2271B3",
+      "rings": null, "photo": "earth.jpg",
+      "moons": [
+        { "id": "moon", "name": "Lua", "dist": 384400, "size": 3.474, "color": "#B8B8B8", "side": -1, "photo": "moon.jpg" }
+      ]
+    },
+    {
+      "id": "mars", "name": "Marte", "dist": 227900000, "size": 6.8, "color": "#E27B58",
+      "rings": null, "photo": "mars.jpg",
+      "moons": [
+        { "id": "phobos", "name": "Fobos",  "dist": 9376,  "size": 0.022, "color": "#9A8B7C", "side":  1 },
+        { "id": "deimos", "name": "Deimos", "dist": 23460, "size": 0.012, "color": "#9A8B7C", "side": -1 }
+      ]
+    },
+    {
+      "id": "ceres", "name": "Ceres", "dist": 413700000, "size": 0.940, "color": "#8B7D6B",
+      "rings": null, "photo": "ceres.jpg", "moons": []
+    },
+    {
+      "id": "jupiter", "name": "Júpiter", "dist": 778500000, "size": 140, "color": "#C88B3A",
+      "rings": { "color": "rgba(200,170,100,0.12)", "ratio": 1.5 }, "photo": "jupiter.jpg",
+      "moons": [
+        { "id": "io",       "name": "Io",        "dist": 421800,  "size": 3.643, "color": "#E8C56A", "side":  1, "photo": "io.jpg" },
+        { "id": "europa",   "name": "Europa",    "dist": 671100,  "size": 3.122, "color": "#C8B89A", "side": -1, "photo": "europa.jpg" },
+        { "id": "ganymede", "name": "Ganimedes", "dist": 1070400, "size": 5.268, "color": "#B0A090", "side":  1, "photo": "ganymede.jpg" },
+        { "id": "callisto", "name": "Calisto",   "dist": 1882700, "size": 4.821, "color": "#706050", "side": -1, "photo": "callisto.jpg" }
+      ]
+    },
+    {
+      "id": "saturn", "name": "Saturno", "dist": 1433400000, "size": 116, "color": "#C5AB6E",
+      "rings": { "color": "rgba(210,190,130,0.55)", "ratio": 2.5 }, "photo": "saturn.jpg",
+      "moons": [
+        { "id": "mimas",     "name": "Mimas",    "dist": 185520,  "size": 0.396, "color": "#D0D0D0", "side":  1 },
+        { "id": "enceladus", "name": "Encélado", "dist": 238020,  "size": 0.504, "color": "#EEEEEE", "side": -1 },
+        { "id": "tethys",    "name": "Tétis",    "dist": 294660,  "size": 1.062, "color": "#BBBBCC", "side":  1 },
+        { "id": "dione",     "name": "Dione",    "dist": 377400,  "size": 1.123, "color": "#AABBCC", "side": -1 },
+        { "id": "rhea",      "name": "Réia",     "dist": 527040,  "size": 1.528, "color": "#BBBBBB", "side":  1 },
+        { "id": "titan",     "name": "Titã",     "dist": 1221870, "size": 5.150, "color": "#E8AA44", "side": -1, "photo": "titan.jpg" },
+        { "id": "iapetus",   "name": "Jápeto",   "dist": 3560820, "size": 1.469, "color": "#887755", "side":  1 }
+      ]
+    },
+    {
+      "id": "uranus", "name": "Urano", "dist": 2872500000, "size": 51, "color": "#BBE1E4",
+      "rings": { "color": "rgba(170,220,225,0.3)", "ratio": 2.0 }, "photo": "uranus.jpg",
+      "moons": [
+        { "id": "miranda", "name": "Miranda", "dist": 129900, "size": 0.472, "color": "#AAAAAA", "side": -1 },
+        { "id": "ariel",   "name": "Ariel",   "dist": 190900, "size": 1.158, "color": "#CCCCDD", "side":  1 },
+        { "id": "umbriel", "name": "Umbriel", "dist": 266000, "size": 1.170, "color": "#777788", "side": -1 },
+        { "id": "titania", "name": "Titânia", "dist": 436300, "size": 1.578, "color": "#AABBCC", "side":  1 },
+        { "id": "oberon",  "name": "Oberon",  "dist": 583500, "size": 1.523, "color": "#998877", "side": -1 }
+      ]
+    },
+    {
+      "id": "neptune", "name": "Netuno", "dist": 4495100000, "size": 49, "color": "#6081FF",
+      "rings": { "color": "rgba(80,110,220,0.12)", "ratio": 1.7 }, "photo": "neptune.jpg",
+      "moons": [
+        { "id": "triton", "name": "Tritão", "dist": 354800, "size": 2.707, "color": "#BBCCDD", "side": 1, "photo": "triton.jpg" }
+      ]
+    },
+    {
+      "id": "pluto", "name": "Plutão", "dist": 5906400000, "size": 2.4, "color": "#A5A5A5",
+      "rings": null, "photo": "pluto.jpg",
+      "moons": [
+        { "id": "charon", "name": "Caronte", "dist": 19591, "size": 1.212, "color": "#888899", "side": 1 }
+      ]
+    },
+    {
+      "id": "haumea", "name": "Haumea", "dist": 6452000000, "size": 1.62, "color": "#C8B4A0",
+      "rings": null, "photo": "haumea.jpg",
+      "moons": [
+        { "id": "hi-iaka", "name": "Hiʻiaka", "dist": 49880, "size": 0.320, "color": "#AAAAAA", "side":  1 },
+        { "id": "namaka",  "name": "Namaka",  "dist": 25657, "size": 0.170, "color": "#999999", "side": -1 }
+      ]
+    },
+    {
+      "id": "makemake", "name": "Makemake", "dist": 6850000000, "size": 1.430, "color": "#C4703A",
+      "rings": null, "photo": "makemake.jpg",
+      "moons": [
+        { "id": "mk2", "name": "MK2", "dist": 21000, "size": 0.160, "color": "#888888", "side": 1 }
+      ]
+    },
+    {
+      "id": "eris", "name": "Éris", "dist": 10120000000, "size": 2.326, "color": "#CCCCCC",
+      "rings": null, "photo": "eris.jpg",
+      "moons": [
+        { "id": "dysnomia", "name": "Disnômia", "dist": 37273, "size": 0.684, "color": "#AAAAAA", "side": 1 }
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "asteroid-belt",
+      "name": "Cinturão de Asteroides",
+      "innerKm": 329000000,
+      "outerKm": 479000000,
+      "color": "rgba(160, 120, 60, 0.07)",
+      "border": "rgba(160, 120, 60, 0.3)",
+      "minimapColor": "rgba(160, 120, 60, 0.45)"
+    },
+    {
+      "id": "kuiper-belt",
+      "name": "Cinturão de Kuiper",
+      "innerKm": 4500000000,
+      "outerKm": 10500000000,
+      "color": "rgba(80, 120, 180, 0.07)",
+      "border": "rgba(80, 120, 180, 0.3)",
+      "minimapColor": "rgba(80, 120, 180, 0.45)"
+    }
+  ],
+  "info": {
+    "sun":     { "type": "Estrela",         "temp": "5.500 °C (superfície)", "period": "—",       "moons": 0,   "desc": "O coração do sistema solar. Contém 99,8% de toda a massa — o Sol domina gravitacionalmente tudo que orbita ao seu redor." },
+    "mercury": { "type": "Planeta Rochoso", "temp": "−180 a +430 °C",       "period": "88 dias",  "moons": 0,   "desc": "O menor planeta e o mais próximo do Sol. Sem atmosfera para reter calor, sofre a maior variação térmica do sistema solar." },
+    "venus":   { "type": "Planeta Rochoso", "temp": "470 °C (constante)",    "period": "225 dias", "moons": 0,   "desc": "Temperatura constante de 470 °C, suficiente para derreter chumbo. O efeito estufa mais extremo do sistema solar." },
+    "earth":   { "type": "Planeta Rochoso", "temp": "−90 a +60 °C",         "period": "365 dias", "moons": 1,   "desc": "O único mundo com vida conhecida no universo. Toda a história da humanidade aconteceu neste único ponto azul pálido." },
+    "mars":    { "type": "Planeta Rochoso", "temp": "−140 a +20 °C",        "period": "687 dias", "moons": 2,   "desc": "O Monte Olimpo tem 22 km de altitude — três vezes o Everest. Tempestades de areia podem cobrir o planeta inteiro por meses." },
+    "jupiter": { "type": "Gigante Gasoso",  "temp": "−110 °C",              "period": "12 anos",  "moons": 95,  "desc": "Massa 2,5× maior que a soma de todos os outros planetas. A Grande Mancha Vermelha é uma tempestade ativa há mais de 350 anos." },
+    "saturn":  { "type": "Gigante Gasoso",  "temp": "−140 °C",              "period": "29 anos",  "moons": 146, "desc": "Seus anéis têm 270.000 km de largura mas apenas 1 km de espessura. Tão leve que flutuaria em um oceano." },
+    "uranus":  { "type": "Gigante de Gelo", "temp": "−195 °C",              "period": "84 anos",  "moons": 28,  "desc": "Gira completamente de lado, com eixo inclinado 98°. Provavelmente virado por um impacto colossal na sua formação." },
+    "neptune": { "type": "Gigante de Gelo", "temp": "−200 °C",              "period": "165 anos", "moons": 16,  "desc": "Ventos de 2.100 km/h — os mais rápidos do sistema solar. Descoberto por cálculo matemático antes de ser visto." },
+    "pluto":    { "type": "Planeta Anão",    "temp": "−230 °C",              "period": "248 anos", "moons": 5,   "desc": "Descoberto em 1930 e reclassificado como planeta anão em 2006. A luz do Sol leva 5,5 horas para chegar aqui." },
+    "ceres":    { "type": "Planeta Anão",    "temp": "−110 °C",              "period": "4,6 anos", "moons": 0,   "desc": "O maior corpo do cinturão de asteroides, com 940 km de diâmetro. Descoberto em 1801, foi considerado planeta por décadas antes de ser reclassificado." },
+    "haumea":   { "type": "Planeta Anão",    "temp": "−241 °C",              "period": "284 anos", "moons": 2,   "desc": "Gira tão rápido que tem forma de bola de rugby achatada. Seu dia dura apenas 3,9 horas — o menor entre os planetas anões." },
+    "makemake": { "type": "Planeta Anão",    "temp": "−239 °C",              "period": "306 anos", "moons": 1,   "desc": "Descoberto em 2005, três dias após a Páscoa, foi apelidado de Easterbunny. Sua superfície avermelhada é coberta de metano congelado." },
+    "eris":     { "type": "Planeta Anão",    "temp": "−243 °C",              "period": "557 anos", "moons": 1,   "desc": "Mais massivo que Plutão, sua descoberta em 2005 provocou o debate que rebaixou Plutão a planeta anão. A luz do Sol leva mais de 9 horas para chegar aqui." }
+  }
+}
