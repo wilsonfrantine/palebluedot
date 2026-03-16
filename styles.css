@@ -597,16 +597,15 @@ body.dragging #universe { cursor: grabbing; }
 
 .sun-beam {
     position: absolute;
-    /* 300vw garante que as pontas do rectângulo estejam sempre fora da tela */
     width: 300vw;
     height: 100px;
     background: linear-gradient(
         to bottom,
         transparent 0%,
         rgba(180, 210, 255, 0.04) 10%,
-        rgba(255, 230, 160, 0.11) 40%,
+        rgba(160, 245, 241, 0.11) 40%,
         rgba(255, 235, 165, 0.13) 50%,
-        rgba(255, 230, 160, 0.11) 60%,
+        rgba(160, 245, 241, 0.11) 60%,
         rgba(180, 210, 255, 0.04) 90%,
         transparent 100%
     );
@@ -614,7 +613,7 @@ body.dragging #universe { cursor: grabbing; }
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) rotate(115deg);
-    box-shadow: 0 0 80px 28px rgba(255, 200, 100, 0.06);
+   /*  box-shadow: 0 0 80px 28px rgba(255, 200, 100, 0.06); */
 }
 
 #the-dot {
@@ -624,7 +623,7 @@ body.dragging #universe { cursor: grabbing; }
     border-radius: 50%;
     background: #aabfff;
     top: 50%;
-    left: 57%;
+    left: 50%;
     box-shadow: 0 0 6px 2px rgba(170, 190, 255, 0.85);
 }
 
@@ -641,7 +640,7 @@ body.dragging #universe { cursor: grabbing; }
 #welcome-subtitle {
     font-size: 10px;
     letter-spacing: 5px;
-    color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
     text-align: center;
     margin: 0 0 44px;
@@ -662,7 +661,7 @@ body.dragging #universe { cursor: grabbing; }
 #welcome-author-name {
     font-size: 9px;
     letter-spacing: 3px;
-    color: rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
 }
 
@@ -674,7 +673,7 @@ body.dragging #universe { cursor: grabbing; }
 #welcome-author-links a {
     font-size: 8px;
     letter-spacing: 2px;
-    color: rgba(0, 170, 255, 0.28);
+    color: rgba(0, 170, 255, 0.8);
     text-decoration: none;
     text-transform: uppercase;
     transition: color 0.2s;
@@ -700,13 +699,13 @@ body.dragging #universe { cursor: grabbing; }
 #scroll-hint-arrow {
     font-size: 16px;
     letter-spacing: 8px;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 #scroll-hint-label {
     font-size: 10px;
     letter-spacing: 5px;
-    color: rgba(255, 255, 255, 0.32);
+    color: rgba(255, 255, 255, 0.5);
     text-transform: uppercase;
     white-space: nowrap;
 }
@@ -925,6 +924,11 @@ body.dragging #universe { cursor: grabbing; }
     box-shadow: 0 0 12px rgba(0, 170, 255, 0.2), inset 0 0 12px rgba(0, 170, 255, 0.05);
 }
 
+#lightspeed-btn img{
+    width: 3.5vh;
+    height: 100%;
+}
+
 .btn-icon {
     display: flex;
     align-items: center;
@@ -942,6 +946,7 @@ body.dragging #universe { cursor: grabbing; }
     text-shadow: 0 0 8px rgba(0, 170, 255, 0.9), 0 0 20px rgba(0, 170, 255, 0.5);
     animation: photon-wave 0.8s ease-in-out infinite alternate;
 }
+
 
 @keyframes photon-wave {
     from { transform: scale(0.9); }
@@ -1583,7 +1588,7 @@ body.dragging #universe { cursor: grabbing; }
 
     #planet-detail-panel.open { left: 0; }
     
-    #planet-detail-panel.open.collapsed { left: calc(-88vw + 32px); }
+    #planet-detail-panel.open.collapsed { left: calc(-96vw + 32px); }
 
     #planet-detail-inner {
         padding: 60px 20px 140px; /* Espaço para o botão fechar e régua */

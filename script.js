@@ -773,7 +773,7 @@ function setupEvents() {
     window.addEventListener('touchmove', (e) => {
         if (!isDragging || e.touches.length !== 1) return;
         
-        const dx = dragStartX - e.touches[0].clientX;
+        const dx = (dragStartX - e.touches[0].clientX) * sensitivity;
         if (tourActive && Math.abs(dx) > 10) interruptTour();
 
         isAnimating = false;
@@ -1708,7 +1708,7 @@ function updateFreeLightspeedBtn() {
         text.innerText = 'PARAR';
         btn.classList.add('active');
     } else {
-        text.innerText = 'VELOCIDADE DA LUZ';
+        text.innerText = '';
         btn.classList.remove('active');
     }
 }
