@@ -103,6 +103,17 @@ let prevAnyLight      = false;
 // Delta-time tracking for frame-rate-independent lightspeed
 let prevFrameTime = null;
 
+// ─── Cache e throttle de performance ─────────────────────────────────────────
+let _prevTourActive     = false;          // guard classList.toggle no body
+let _lastRulerScrollPos = null;           // throttle: só reconstrói régua quando ticks se movem
+let _lastRulerScale     = null;
+let _lastMinimapMs      = 0;             // throttle: minimap a ~15fps
+let _lastNavMs          = 0;             // throttle: navArrows a ~5fps
+let _lastInfoKm         = null;          // throttle: info display — só atualiza quando muda
+let _lastInfoScale      = null;
+let _lastSaturnSizePx   = 0;             // guard: anéis de Saturno só recalculam em zoom
+let _infoDistEl = null, _infoUaEl = null, _infoAlEl = null, _infoLightEl = null;
+
 // Successfully preloaded photo filenames
 const loadedPhotos = new Set();
 
@@ -186,9 +197,10 @@ function init() {
     createStars();
     createUniverse();
     createMinimap();
+    buildInfoDisplay();
     setupEvents();
-    scrollPos    = 0;
     currentScale = 3000;
+    scrollPos    = -10_000_000 / currentScale; // start at welcome overlay position
     // Collapse minimap by default on small screens
     if (window.innerWidth <= 600 || (window.innerHeight <= 440 && window.innerWidth > window.innerHeight)) {
         const mc = document.getElementById('minimap-container');
@@ -212,11 +224,13 @@ function createStars() {
         { minSize: 1.0, maxSize: 2.0, minTrail: 20, maxTrail: 55 },
         { minSize: 0.5, maxSize: 1.0, minTrail: 10, maxTrail: 28 },
     ];
+    // Reduz estrelas em mobile ou CPUs de baixo desempenho
+    const STAR_COUNT = (window.innerWidth <= 600 || (navigator.hardwareConcurrency || 4) <= 2) ? 70 : 130;
     layerConfig.forEach((cfg, l) => {
         const layer = document.createElement('div');
         layer.className = `star-layer-${l}`;
         layer.style.cssText = 'position:absolute;width:200%;height:100%;top:0;left:0;';
-        for (let i = 0; i < 130; i++) {
+        for (let i = 0; i < STAR_COUNT; i++) {
             const star = document.createElement('div');
             star.className = 'star';
             const size = cfg.minSize + Math.random() * (cfg.maxSize - cfg.minSize);
@@ -249,44 +263,6 @@ function createUniverse() {
         el.style.borderRight = `1px solid ${zone.border}`;
 
         universe.appendChild(el);
-
-        // Partículas de asteroides — pequenas e médias
-        const particleConfig = [
-            { count: 100, minSz: 0.6, maxSz: 1.8, yRange: 420, minOp: 0.20, maxOp: 0.55 },  // small bg
-            { count: 40,  minSz: 2.0, maxSz: 5.0, yRange: 300, minOp: 0.30, maxOp: 0.65 },  // medium
-            { count: 15,  minSz: 5.0, maxSz: 12.0, yRange: 200, minOp: 0.20, maxOp: 0.45 }, // large bg rocks
-        ];
-        particleConfig.forEach(cfg => {
-            for (let a = 0; a < cfg.count; a++) {
-                const ast = document.createElement('div');
-                ast.className = 'asteroid-particle';
-                const distKm = zone.innerKm + Math.random() * (zone.outerKm - zone.innerKm);
-                const yOff   = (Math.random() - 0.5) * cfg.yRange;
-                const size   = cfg.minSz + Math.random() * (cfg.maxSz - cfg.minSz);
-                ast.dataset.distKm = distKm;
-                ast.dataset.yOff   = yOff;
-                ast.style.width    = size + 'px';
-                ast.style.height   = size + 'px';
-                ast.style.opacity  = (cfg.minOp + Math.random() * (cfg.maxOp - cfg.minOp)).toFixed(2);
-                universe.appendChild(ast);
-            }
-        });
-
-        // Asteroides grandes — flyby rocks
-        const numLarge = 1 + Math.floor(Math.random() * 3);
-        for (let a = 0; a < numLarge; a++) {
-            const el = document.createElement('div');
-            el.className = 'large-asteroid';
-            const distKm = zone.innerKm + Math.random() * (zone.outerKm - zone.innerKm);
-            const yOff   = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 0.15 * window.innerHeight);
-            const wPct   = 50 + Math.random() * 20;
-            el.dataset.distKm = distKm;
-            el.dataset.yOff   = yOff;
-            el.style.setProperty('--ast-size', wPct + 'vh');
-            const r = () => Math.floor(Math.random() * 20);
-            el.style.borderRadius = `${30+r()}% ${70-r()}% ${40+r()}% ${60-r()}% / ${35+r()}% ${65-r()}% ${45+r()}% ${55-r()}%`;
-            universe.appendChild(el);
-        }
     });
 
     // 2. Corpos celestes
@@ -302,8 +278,14 @@ function createUniverse() {
         planet.dataset.photo = body.photo || '';
         const handleBodyClick = (e) => {
             e.stopPropagation();
-            startProgrammedAnim(body.dist, Math.max(5, body.size * 1000 / 300));
-            openPlanetDetail(body);
+            const tgtScale = Math.max(5, body.size * 1000 / 300);
+            if (window.innerWidth <= 600) {
+                // Mobile: abre painel só após o zoom terminar para não sobrecarregar o frame
+                startProgrammedAnim(body.dist, tgtScale, () => openPlanetDetail(body));
+            } else {
+                startProgrammedAnim(body.dist, tgtScale);
+                openPlanetDetail(body);
+            }
         };
 
         planet.onclick = handleBodyClick;
@@ -435,6 +417,9 @@ function createUniverse() {
             mc.dataset.moonIdx  = idx;
         });
     });
+
+    // Reseta guard de tamanho de Saturno ao recriar o universo
+    _lastSaturnSizePx = 0;
 }
 
 // ─── Atualização de Posições ─────────────────────────────────────────────────
@@ -494,24 +479,28 @@ function updateUniversePositions() {
             planet.style.height = sizePx + 'px';
 
             if (body.id === 'saturn') {
-                const ringDefs = [
-                    { id: 'c', outerD: sizePx * 1.62, borderW: sizePx * 0.155, color: 'rgba(130, 100, 65, 0.18)' },
-                    { id: 'b', outerD: sizePx * 1.985, borderW: sizePx * 0.240, color: 'rgba(195, 162, 96, 0.43)' },
-                    { id: 'a', outerD: sizePx * 2.42, borderW: sizePx * 0.175, color: 'rgba(218, 198, 145, 0.34)' },
-                ];
-                ringDefs.forEach(def => {
-                    const el = document.getElementById(`saturn-ring-${def.id}`);
-                    if (!el) return;
-                    el.style.width       = def.outerD + 'px';
-                    el.style.height      = def.outerD + 'px';
-                    el.style.borderWidth = Math.max(1, def.borderW) + 'px';
-                    el.style.borderColor = def.color;
-                });
-                const topCover = document.getElementById('saturn-top-cover');
-                if (topCover) {
-                    const photo = planet.dataset.photo;
-                    topCover.style.backgroundImage = (photo && loadedPhotos.has(photo) && sizePx > 1)
-                        ? `url('photos/${photo}')` : '';
+                // Anéis só mudam em zoom — ignora durante scroll puro (< 0.3px de variação)
+                if (Math.abs(sizePx - _lastSaturnSizePx) > 0.3) {
+                    _lastSaturnSizePx = sizePx;
+                    const ringDefs = [
+                        { id: 'c', outerD: sizePx * 1.62, borderW: sizePx * 0.155, color: 'rgba(130, 100, 65, 0.18)' },
+                        { id: 'b', outerD: sizePx * 1.985, borderW: sizePx * 0.240, color: 'rgba(195, 162, 96, 0.43)' },
+                        { id: 'a', outerD: sizePx * 2.42, borderW: sizePx * 0.175, color: 'rgba(218, 198, 145, 0.34)' },
+                    ];
+                    ringDefs.forEach(def => {
+                        const el = document.getElementById(`saturn-ring-${def.id}`);
+                        if (!el) return;
+                        el.style.width       = def.outerD + 'px';
+                        el.style.height      = def.outerD + 'px';
+                        el.style.borderWidth = Math.max(1, def.borderW) + 'px';
+                        el.style.borderColor = def.color;
+                    });
+                    const topCover = document.getElementById('saturn-top-cover');
+                    if (topCover) {
+                        const photo = planet.dataset.photo;
+                        topCover.style.backgroundImage = (photo && loadedPhotos.has(photo) && sizePx > 1)
+                            ? `url('photos/${photo}')` : '';
+                    }
                 }
             } else if (body.rings) {
                 const rings    = planet.querySelector('.planet-rings');
@@ -521,8 +510,12 @@ function updateUniversePositions() {
             }
 
             const photo = planet.dataset.photo;
-            planet.style.backgroundImage = (photo && loadedPhotos.has(photo) && sizePx > 1)
+            const newBg = (photo && loadedPhotos.has(photo) && sizePx > 1)
                 ? `url('photos/${photo}')` : '';
+            if (planet.dataset.renderedBg !== newBg) {
+                planet.style.backgroundImage = newBg;
+                planet.dataset.renderedBg    = newBg;
+            }
 
         }
 
@@ -591,27 +584,6 @@ function updateUniversePositions() {
         el.style.left = sx + 'px';
     });
 
-    // Partículas de asteroides
-    document.querySelectorAll('.asteroid-particle').forEach(ast => {
-        const distKm = parseFloat(ast.dataset.distKm);
-        const yOff   = parseFloat(ast.dataset.yOff);
-        const sx = screenX(distKm);
-        if (sx < -20 || sx > vw + 20) { ast.style.display = 'none'; return; }
-        ast.style.display = '';
-        ast.style.left = sx + 'px';
-        ast.style.top  = (hh + yOff) + 'px';
-    });
-
-    // Asteroides grandes
-    document.querySelectorAll('.large-asteroid').forEach(ast => {
-        const distKm = parseFloat(ast.dataset.distKm);
-        const yOff   = parseFloat(ast.dataset.yOff);
-        const sx = screenX(distKm);
-        if (sx < -vw || sx > 2 * vw) { ast.style.display = 'none'; return; }
-        ast.style.display = '';
-        ast.style.left = sx + 'px';
-        ast.style.top  = (hh + yOff) + 'px';
-    });
 
     if (zoomOutBtn) {
         zoomOutBtn.style.display = currentScale < 2500 ? 'block' : 'none';
@@ -683,6 +655,11 @@ function updateMinimap() {
     const cursor = document.getElementById('minimap-cursor');
     if (!canvas || !cursor) return;
 
+    // Minimap não precisa de 60fps — 15fps é imperceptível para um mapa de navegação
+    const _mnow = performance.now();
+    if (_mnow - _lastMinimapMs < 66) return;
+    _lastMinimapMs = _mnow;
+
     const W        = canvas.offsetWidth;
     const cursorKm = Math.max(0, scrollPos * currentScale);
     const x        = minimapScale(cursorKm, W);
@@ -713,6 +690,11 @@ function updateMinimap() {
 // ─── Navegação Anterior / Próximo ────────────────────────────────────────────
 
 function updateNavArrows() {
+    // As setas mudam só quando o planeta mais próximo muda — 5fps é mais que suficiente
+    const _nnow = performance.now();
+    if (_nnow - _lastNavMs < 200) return;
+    _lastNavMs = _nnow;
+
     const idx           = getNearestBodyIndex();
     const currentNameEl = document.getElementById('nav-current-name');
     const prevNameEl    = document.getElementById('nav-prev-name');
@@ -745,7 +727,7 @@ function setupEvents() {
         } else {
             isAnimating = false;
             scrollPos += e.deltaY * sensitivity;
-            scrollPos = Math.max(-window.innerWidth / 2, scrollPos);
+            scrollPos = Math.max(-10_000_000 / currentScale, scrollPos);
             updateScroll();
         }
     }, { passive: false });
@@ -763,7 +745,7 @@ function setupEvents() {
         const dx = dragStartX - e.clientX;
         if (tourActive && Math.abs(dx) > 6) interruptTour();
         isAnimating = false;
-        scrollPos = Math.max(-window.innerWidth / 2, dragStartScrollPos + dx);
+        scrollPos = Math.max(-10_000_000 / currentScale, dragStartScrollPos + dx);
         updateScroll();
     });
 
@@ -793,9 +775,9 @@ function setupEvents() {
         
         const dx = dragStartX - e.touches[0].clientX;
         if (tourActive && Math.abs(dx) > 10) interruptTour();
-        
+
         isAnimating = false;
-        scrollPos = Math.max(-window.innerWidth / 2, dragStartScrollPos + dx);
+        scrollPos = Math.max(-10_000_000 / currentScale, dragStartScrollPos + dx);
         updateScroll();
         
         // Impede o scroll nativo da página enquanto arrasta no simulador
@@ -823,9 +805,6 @@ function setupEvents() {
     const lightspeedBtn  = document.getElementById('lightspeed-btn');
     if (lightspeedBtn) {
         lightspeedBtn.onclick = () => {
-            if (lightspeedBtn.classList.contains('intro')) {
-                lightspeedBtn.classList.remove('intro');
-            }
             if (tourActive) return;
             if (isLightSpeed) {
                 // Decelerate to stop
@@ -908,26 +887,6 @@ function setupEvents() {
         };
     }
 
-    const startBtn = document.getElementById('start-btn');
-    if (startBtn) startBtn.onclick = startFreeMode;
-
-    // Scroll / swipe na tela inicial dispara a jornada
-    const welcomeOverlay = document.getElementById('welcome-overlay');
-    if (welcomeOverlay) {
-        welcomeOverlay.addEventListener('wheel', (e) => {
-            if (e.deltaY > 5 || e.deltaX > 5) startFreeMode();
-        }, { passive: true });
-        let _wTouchX = 0, _wTouchY = 0;
-        welcomeOverlay.addEventListener('touchstart', (e) => {
-            _wTouchX = e.touches[0].clientX;
-            _wTouchY = e.touches[0].clientY;
-        }, { passive: true });
-        welcomeOverlay.addEventListener('touchend', (e) => {
-            const dx = e.changedTouches[0].clientX - _wTouchX;
-            const dy = _wTouchY - e.changedTouches[0].clientY; // swipe up = positive
-            if (dx > 40 || dy > 40) startFreeMode();
-        }, { passive: true });
-    }
 
     // Toggle de configurações
     const settingsToggle = document.getElementById('settings-toggle');
@@ -955,6 +914,24 @@ function applyManualZoom(newScale) {
     updateScroll();
 }
 
+// ─── Info Display — construído uma vez, atualizado por textContent ────────────
+
+function buildInfoDisplay() {
+    if (!infoDisplay) return;
+    infoDisplay.innerHTML = `
+        <div class="info-item"><span class="info-label">Distância</span><span class="info-value" id="info-val-dist">0 km</span></div>
+        <div class="info-item"><span class="info-label">UA</span><span class="info-value" id="info-val-ua">0.0000</span></div>
+        <div class="info-item"><span class="info-label">Ano-Luz</span><span class="info-value" id="info-val-al">0.00000000</span></div>
+        <div class="info-item"><span class="info-label">Tempo de Luz</span><span class="info-value" id="info-val-light">0.0s</span></div>
+    `;
+    _infoDistEl  = document.getElementById('info-val-dist');
+    _infoUaEl    = document.getElementById('info-val-ua');
+    _infoAlEl    = document.getElementById('info-val-al');
+    _infoLightEl = document.getElementById('info-val-light');
+    _lastInfoKm    = null;
+    _lastInfoScale = null;
+}
+
 // ─── Scroll / UI ─────────────────────────────────────────────────────────────
 //
 // FIX: universe.style.transform = translateX(...) foi removido.
@@ -962,32 +939,61 @@ function applyManualZoom(newScale) {
 
 function updateScroll() {
     updateUniversePositions();
+    updateRulerPosition();
     updateUI();
+    updateWelcomeOverlay();
     updateScaleIntro();
+}
+
+const RULER_START_KM = -5_000_000; // régua começa 5M km antes do Sol
+
+function rulerLeftPx() {
+    // Posição de tela do ponto de início da régua
+    const x = window.innerWidth / 2 + (RULER_START_KM - scrollPos * currentScale) / currentScale;
+    return Math.max(0, x);
+}
+
+function updateRulerPosition() {
+    const rulerEl = document.getElementById('astronomical-ruler');
+    if (rulerEl) rulerEl.style.left = rulerLeftPx() + 'px';
+}
+
+function updateWelcomeOverlay() {
+    const ws = document.getElementById('welcome-screen');
+    if (!ws) return;
+    // Slide with the universe: translate so the screen is centered at km = -10M
+    const offsetPx = screenX(-10_000_000) - window.innerWidth / 2;
+    ws.style.transform = `translateX(${offsetPx}px)`;
+    // Pointer events only when close to viewport (within 1 screen width)
+    ws.style.pointerEvents = Math.abs(offsetPx) < window.innerWidth ? 'auto' : 'none';
 }
 
 function updateScaleIntro() {
     const si = document.getElementById('scale-intro');
     if (!si) return;
 
-    // Only show when the welcome overlay is gone and we're before the Sun
-    const overlay = document.getElementById('welcome-overlay');
-    const overlayActive = overlay && overlay.style.display !== 'none' && !overlay.classList.contains('fading');
-    if (overlayActive || scrollPos >= 0) {
+    const km = scrollPos * currentScale;
+
+    // Visível apenas entre a tela de início e o Sol (-8M a 0 km)
+    if (km <= -8_000_000 || scrollPos >= 0) {
         si.style.display = 'none';
         return;
     }
 
     si.style.display = 'flex';
 
-    // Fade out as the user approaches the Sun (full opacity at -vw/4, zero at 0)
-    const fadeThreshold = window.innerWidth / 4;
-    const opacity = Math.min(1, Math.abs(scrollPos) / fadeThreshold);
-    si.style.opacity = opacity;
+    // Fade in: -8M → -6M (0 → 1); Fade out: -1.5M → 0 (1 → 0)
+    let opacity = 1;
+    if (km < -6_000_000) {
+        opacity = (km - (-8_000_000)) / 2_000_000;         // 0→1 entre -8M e -6M
+    } else if (km > -1_500_000) {
+        opacity = km / (-1_500_000);                        // 1→0 entre -1.5M e 0
+    }
+    si.style.opacity = Math.max(0, Math.min(1, opacity));
 
     const screenKm   = window.innerWidth * currentScale;
     const lightCross = screenKm / LIGHT_SPEED_KM_S;
-    const distToSun  = Math.abs(scrollPos) * currentScale;
+    const distToSun  = Math.abs(km);
 
     const pxEl  = document.getElementById('si-px');
     const detEl = document.getElementById('si-details');
@@ -1004,25 +1010,19 @@ function updateUI() {
     const distAL  = distKm / AL_KM;
     const lightSec = distKm / LIGHT_SPEED_KM_S;
 
-    if (infoDisplay) {
-        infoDisplay.innerHTML = `
-            <div class="info-item">
-                <span class="info-label">Distância</span>
-                <span class="info-value">${Math.max(0, Math.floor(distKm)).toLocaleString('pt-BR')} km</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">UA</span>
-                <span class="info-value">${Math.max(0, distUA).toFixed(4)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Ano-Luz</span>
-                <span class="info-value">${Math.max(0, distAL).toFixed(8)}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Tempo de Luz</span>
-                <span class="info-value">${formatTime(Math.max(0, lightSec))}</span>
-            </div>
-        `;
+    // Só atualiza os spans quando o valor muda de forma perceptível
+    // (threshold = 1 "pixel escalonado" de distância — elimina writes desnecessários)
+    if (_infoDistEl) {
+        const threshold = Math.max(100, currentScale);
+        const roundedKm = Math.floor(distKm / threshold) * threshold;
+        if (roundedKm !== _lastInfoKm || currentScale !== _lastInfoScale) {
+            _lastInfoKm    = roundedKm;
+            _lastInfoScale = currentScale;
+            _infoDistEl.textContent  = Math.max(0, Math.floor(distKm)).toLocaleString('pt-BR') + ' km';
+            _infoUaEl.textContent    = Math.max(0, distUA).toFixed(4);
+            _infoAlEl.textContent    = Math.max(0, distAL).toFixed(8);
+            _infoLightEl.textContent = formatTime(Math.max(0, lightSec));
+        }
     }
 
     // Indicador de cinturão
@@ -1047,42 +1047,56 @@ function updateUI() {
 
 function updateRuler() {
     if (!rulerTicks) return;
-    rulerTicks.innerHTML = '';
 
+    // Calcula step antes do guard para poder comparar posição real dos ticks
     let stepKm = 100000;
     if (currentScale < 100)   stepKm = 10000;
     if (currentScale < 10)    stepKm = 1000;
     if (currentScale > 5000)  stepKm = 1000000;
     if (currentScale > 50000) stepKm = 10000000;
 
-    const stepPx     = stepKm / currentScale;
+    const stepPx = stepKm / currentScale;
+
+    // Só reconstrói quando os ticks se deslocaram ≥ 10% de um intervalo
+    if (_lastRulerScale === currentScale &&
+        _lastRulerScrollPos !== null &&
+        Math.abs(scrollPos - _lastRulerScrollPos) < stepPx * 0.1) return;
+    _lastRulerScale     = currentScale;
+    _lastRulerScrollPos = scrollPos;
+
+    rulerTicks.innerHTML = '';
     const halfWidth  = window.innerWidth / 2;
-    const offset     = scrollPos - halfWidth;
-    const startIdx   = Math.floor(offset / stepPx);
-    const endIdx     = startIdx + Math.ceil(window.innerWidth / stepPx) + 1;
+    const sunX       = halfWidth - scrollPos;  // screenX(0)
+    const rulerLeft  = rulerLeftPx();          // mesma fórmula do container — sem desalinhamento
+    const rulerWidth = window.innerWidth - rulerLeft;
+
+    // Ticks apenas para km ≥ 0
+    const offset   = scrollPos - halfWidth;
+    const startIdx = Math.max(0, Math.floor(offset / stepPx));
+    const endIdx   = startIdx + Math.ceil(rulerWidth / stepPx) + 1;
 
     for (let i = startIdx; i <= endIdx; i++) {
-        const x = i * stepPx - offset;
-        if (x < 0 || x > window.innerWidth) continue;
+        const tickX = (i * stepPx + sunX) - rulerLeft;
+        if (tickX < 0 || tickX > rulerWidth) continue;
         const tick     = document.createElement('div');
         const isMajor  = i % 10 === 0;
         tick.className = `tick${isMajor ? ' major' : ''}`;
-        tick.style.left = x + 'px';
+        tick.style.left = tickX + 'px';
         if (isMajor) {
             const lbl = document.createElement('div');
             lbl.className  = 'tick-label';
-            lbl.innerText  = formatKm(Math.abs(i * stepKm));
+            lbl.innerText  = formatKm(i * stepKm);
             tick.appendChild(lbl);
         }
         rulerTicks.appendChild(tick);
     }
 
-    // Marcador de 1 UA
-    const uaX = (UA_KM / currentScale) - scrollPos + halfWidth;
-    if (uaX >= 0 && uaX <= window.innerWidth) {
+    // Marcador de 1 UA (relativo à borda da régua)
+    const uaTickX = (UA_KM / currentScale + sunX) - rulerLeft;
+    if (uaTickX >= 0 && uaTickX <= rulerWidth) {
         const uaTick = document.createElement('div');
-        uaTick.className   = 'tick major';
-        uaTick.style.left  = uaX + 'px';
+        uaTick.className        = 'tick major';
+        uaTick.style.left       = uaTickX + 'px';
         uaTick.style.background = '#ff5555';
         const uaLbl = document.createElement('div');
         uaLbl.className  = 'tick-label';
@@ -1201,16 +1215,23 @@ function animate(now) {
 
     // Warp visual contributes to the same "streaking stars" effect as lightspeed
     const anyLight = isLightSpeed || lightspeedDecelerating || isWarpVisual;
-    if (photon)      photon.classList.toggle('active',      anyLight);
-    if (starFieldEl) starFieldEl.classList.toggle('warp-active', anyLight);
-    document.body.classList.toggle('lightspeed-active', anyLight);
-    document.body.classList.toggle('tour-active', tourActive);
+    // Só chama classList.toggle quando o estado muda — evita cascade de CSS em 99% dos frames
+    if (anyLight !== prevAnyLight) {
+        if (photon)      photon.classList.toggle('active',      anyLight);
+        if (starFieldEl) starFieldEl.classList.toggle('warp-active', anyLight);
+        document.body.classList.toggle('lightspeed-active', anyLight);
+    }
+    if (tourActive !== _prevTourActive) {
+        document.body.classList.toggle('tour-active', tourActive);
+        _prevTourActive = tourActive;
+    }
 
     // Star layer movement: speed-based during lightspeed, position-based otherwise
     const PLUTO_KM_REF = 5906400000;
     const kmPos        = Math.max(0, scrollPos * currentScale);
     const maxShifts    = [60, 30, 10]; // max px shift at Pluto distance (position-based)
-    const basePixels   = [30, 15, 6];  // px/frame per layer at 1c
+    // px/s por layer a 1c — mobile usa ~1/3 do desktop para não saturar a tela pequena
+    const basePixels   = window.innerWidth <= 600 ? [600, 300, 120] : [1800, 900, 360];
 
     // Compute fractional speed (0=stopped, 1=1c, >1 if tour speed > 1c)
     let speedFactor = 0;
@@ -1237,7 +1258,7 @@ function animate(now) {
     if (anyLight && speedFactor > 0) {
         starLayers.forEach((layer, l) => {
             if (!layer) return;
-            starScrollOffsets[l] = (starScrollOffsets[l] + basePixels[l] * speedFactor) % window.innerWidth;
+            starScrollOffsets[l] = (starScrollOffsets[l] + basePixels[l] * speedFactor * dt) % window.innerWidth;
             layer.style.transform = `translateX(-${starScrollOffsets[l].toFixed(1)}px)`;
         });
     } else {
@@ -1346,25 +1367,9 @@ function closePlanetDetail() {
 
 // ─── Tour Guiado ─────────────────────────────────────────────────────────────
 
-function startFreeMode() {
-    const overlay = document.getElementById('welcome-overlay');
-    if (!overlay || overlay.classList.contains('fading') || overlay.style.display === 'none') return;
-
-    // Fade the overlay out seamlessly — universe is already visible behind it
-    overlay.classList.add('fading');
-    setTimeout(() => { overlay.style.display = 'none'; }, 700);
-
-    // Start one viewport-width before the Sun so the scale intro is visible
-    scrollPos = -window.innerWidth / 2;
-    updateScroll();
-
-    const lightspeedBtn = document.getElementById('lightspeed-btn');
-    if (lightspeedBtn) lightspeedBtn.classList.remove('intro');
-}
+function startFreeMode() { /* no-op: welcome screen is always in the universe */ }
 
 function startTour() {
-    const overlay = document.getElementById('welcome-overlay');
-    if (overlay) overlay.style.display = 'none';
     const introPanel = document.getElementById('tour-intro-panel');
     if (introPanel) introPanel.classList.add('visible');
 }

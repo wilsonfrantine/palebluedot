@@ -38,8 +38,13 @@ body {
     background: white;
     border-radius: 50%;
     animation: pulse var(--pulse-duration) infinite alternate;
-    transition: transform 0.6s ease-out, opacity 0.4s, border-radius 0.5s ease-out;
     transform-origin: right center;
+    /* sem transition — warp aplica transforms via JS; transition causaria double-animation */
+}
+
+/* Promove as 3 layers de parallax a camadas GPU compositing próprias */
+.star-layer-0, .star-layer-1, .star-layer-2 {
+    will-change: transform;
 }
 
 /* ─── Velocidade da Luz: cauda gradiente + glow por camada ──────── */
@@ -95,15 +100,6 @@ body {
 
 body.dragging #universe { cursor: grabbing; }
 
-/* ─── Partículas de Asteroide ───────────────────────────────────── */
-
-.asteroid-particle {
-    position: absolute;
-    background: rgba(180, 160, 120, 0.7);
-    border-radius: 50%;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-}
 
 /* ─── Zonas Solares (cinturões) ─────────────────────────────────── */
 
@@ -152,28 +148,15 @@ body.dragging #universe { cursor: grabbing; }
 
 .celestial-body:hover { transform: scale(1.2); }
 
-/* ─── Sol: brilho pulsante ──────────────────────────────────────── */
+/* ─── Sol: brilho estático ──────────────────────────────────────── */
 
 #body-sun {
-    animation: sun-glow 4s ease-in-out infinite alternate;
     overflow: visible;
-}
-
-@keyframes sun-glow {
-    from {
-        box-shadow:
-            0 0 40px 12px  rgba(253, 200,  60, 0.45),
-            0 0 100px 30px rgba(253, 160,  20, 0.20),
-            0 0 200px 60px rgba(253, 120,   0, 0.08);
-        filter: brightness(1.0) saturate(1.0);
-    }
-    to {
-        box-shadow:
-            0 0 70px 22px  rgba(253, 210,  80, 0.65),
-            0 0 160px 55px rgba(253, 170,  30, 0.30),
-            0 0 320px 100px rgba(253, 130,  0, 0.12);
-        filter: brightness(1.12) saturate(1.15);
-    }
+    box-shadow:
+        0 0 55px 16px  rgba(253, 205,  70, 0.55),
+        0 0 130px 42px rgba(253, 165,  25, 0.25),
+        0 0 260px 80px rgba(253, 125,   0, 0.10);
+    filter: brightness(1.06) saturate(1.08);
 }
 
 .planet-rings {
@@ -508,9 +491,12 @@ body.dragging #universe { cursor: grabbing; }
 
 #astronomical-ruler {
     position: fixed;
-    bottom: 0; left: 0; width: 100%; height: var(--ruler-h);
+    bottom: 0; left: 0; right: 0; height: var(--ruler-h); /* left é atualizado via JS */
     background: rgba(0, 0, 0, 0.95);
     border-top: 1px solid #1a1a2e;
+    /* Fade no início esquerdo — mascara a borda abrupta quando a régua não está em left:0 */
+    -webkit-mask-image: linear-gradient(to right, transparent 0px, black 52px);
+    mask-image: linear-gradient(to right, transparent 0px, black 52px);
     z-index: 1000;
     padding: 6px 20px 10px;
 }
@@ -587,21 +573,17 @@ body.dragging #universe { cursor: grabbing; }
 
 /* ─── Tela Inicial ──────────────────────────────────────────────── */
 
-#welcome-overlay {
+/* Posicionada no universo via JS (translateX tracking scrollPos).
+   Sem background próprio — o espaço/estrelas ficam visíveis atrás. */
+#welcome-screen {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: #000;
     z-index: 5000;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    transition: opacity 0.65s ease;
-}
-
-#welcome-overlay.fading {
-    opacity: 0;
-    pointer-events: none;
+    will-change: transform;
 }
 
 #pale-blue-dot-sim {
@@ -609,26 +591,30 @@ body.dragging #universe { cursor: grabbing; }
     width: 100%;
     max-width: 700px;
     height: 200px;
-    /*overflow: hidden;*/
+    overflow: visible;
     margin-bottom: 48px;
 }
 
 .sun-beam {
     position: absolute;
-    width: 200%;
-    height: 80px;
+    /* 300vw garante que as pontas do rectângulo estejam sempre fora da tela */
+    width: 300vw;
+    height: 100px;
     background: linear-gradient(
         to bottom,
         transparent 0%,
-        rgba(255, 255, 255, 0.028) 22%,
-        rgba(255, 255, 255, 0.028) 78%,
+        rgba(180, 210, 255, 0.04) 10%,
+        rgba(255, 230, 160, 0.11) 40%,
+        rgba(255, 235, 165, 0.13) 50%,
+        rgba(255, 230, 160, 0.11) 60%,
+        rgba(180, 210, 255, 0.04) 90%,
         transparent 100%
     );
-    transform: rotate(115deg);
-    transform-origin: 53% 50%;
-    top: 44%;
-    left: -50%;
-    box-shadow: 0 0 60px 20px rgba(255, 200, 120, 0.04);
+    /* Centralizado no #pale-blue-dot-sim; rotação em torno do próprio centro */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(115deg);
+    box-shadow: 0 0 80px 28px rgba(255, 200, 100, 0.06);
 }
 
 #the-dot {
@@ -638,7 +624,7 @@ body.dragging #universe { cursor: grabbing; }
     border-radius: 50%;
     background: #aabfff;
     top: 50%;
-    left: 56%;
+    left: 57%;
     box-shadow: 0 0 6px 2px rgba(170, 190, 255, 0.85);
 }
 
@@ -660,6 +646,42 @@ body.dragging #universe { cursor: grabbing; }
     text-align: center;
     margin: 0 0 44px;
     font-weight: 400;
+}
+
+#welcome-author {
+    position: absolute;
+    bottom: 80px;
+    right: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    pointer-events: auto;
+}
+
+#welcome-author-name {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.16);
+    text-transform: uppercase;
+}
+
+#welcome-author-links {
+    display: flex;
+    gap: 12px;
+}
+
+#welcome-author-links a {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: rgba(0, 170, 255, 0.28);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.2s;
+}
+
+#welcome-author-links a:hover {
+    color: rgba(0, 170, 255, 0.65);
 }
 
 #scroll-hint {
@@ -712,31 +734,31 @@ body.dragging #universe { cursor: grabbing; }
 }
 
 .si-label {
-    font-size: 8px;
+    font-size: 9px;
     letter-spacing: 5px;
-    color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.35);
     text-transform: uppercase;
 }
 
 .si-main {
-    font-size: 22px;
+    font-size: 28px;
     letter-spacing: 4px;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.80);
     text-transform: uppercase;
     font-weight: 500;
 }
 
 .si-sub {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 3px;
-    color: rgba(0, 170, 255, 0.45);
+    color: rgba(0, 170, 255, 0.70);
     text-transform: uppercase;
 }
 
 .si-arrow {
     font-size: 9px;
     letter-spacing: 4px;
-    color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.25);
     text-transform: uppercase;
     margin-top: 8px;
 }
@@ -896,18 +918,6 @@ body.dragging #universe { cursor: grabbing; }
 
 #lightspeed-btn:hover #lightspeed-text { opacity: 1; }
 
-#lightspeed-btn.intro {
-    bottom: 50%; right: 50%;
-    transform: translate(50%, 50%);
-    max-width: 280px;
-    gap: 12px;
-    font-size: 20px;
-    border-color: var(--accent-color);
-    color: rgba(0, 170, 255, 0.8);
-    box-shadow: 0 0 30px rgba(0, 170, 255, 0.2);
-}
-
-#lightspeed-btn.intro #lightspeed-text { opacity: 1; }
 
 #lightspeed-btn.active {
     color: var(--accent-color);
@@ -1356,18 +1366,6 @@ body.dragging #universe { cursor: grabbing; }
 
 /* waypoints remain visible during lightspeed — user can see them while passing */
 
-/* ─── Asteroides Grandes (flyby) ────────────────────────────────── */
-
-.large-asteroid {
-    position: absolute;
-    width: var(--ast-size);
-    height: calc(var(--ast-size) * 0.7);
-    background: radial-gradient(ellipse at 38% 32%, #666 0%, #3a3530 55%, transparent 90%);
-    pointer-events: none;
-    z-index: 1;
-    transform: translateX(-50%) translateY(-50%);
-    opacity: 0.85;
-}
 
 /* ─── Créditos ───────────────────────────────────────────────────── */
 
@@ -1670,9 +1668,14 @@ body.dragging #universe { cursor: grabbing; }
         color: rgba(255, 255, 255, 0.6);
     }
 
+    #welcome-author {
+        bottom: 110px;
+        right: 16px;
+    }
+
     /* Scale intro */
-    .si-main { font-size: 16px; }
-    .si-sub  { font-size: 8px; }
+    .si-main { font-size: 20px; }
+    .si-sub  { font-size: 10px; }
 }
 
 /* ---------- Phone landscape (height ≤ 440px) --------------------- */
