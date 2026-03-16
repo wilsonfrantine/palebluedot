@@ -100,6 +100,9 @@ let starLayers = [];
 let starScrollOffsets = [0, 0, 0];
 let prevAnyLight      = false;
 
+// Delta-time tracking for frame-rate-independent lightspeed
+let prevFrameTime = null;
+
 // Successfully preloaded photo filenames
 const loadedPhotos = new Set();
 
@@ -960,6 +963,39 @@ function applyManualZoom(newScale) {
 function updateScroll() {
     updateUniversePositions();
     updateUI();
+    updateScaleIntro();
+}
+
+function updateScaleIntro() {
+    const si = document.getElementById('scale-intro');
+    if (!si) return;
+
+    // Only show when the welcome overlay is gone and we're before the Sun
+    const overlay = document.getElementById('welcome-overlay');
+    const overlayActive = overlay && overlay.style.display !== 'none' && !overlay.classList.contains('fading');
+    if (overlayActive || scrollPos >= 0) {
+        si.style.display = 'none';
+        return;
+    }
+
+    si.style.display = 'flex';
+
+    // Fade out as the user approaches the Sun (full opacity at -vw/4, zero at 0)
+    const fadeThreshold = window.innerWidth / 4;
+    const opacity = Math.min(1, Math.abs(scrollPos) / fadeThreshold);
+    si.style.opacity = opacity;
+
+    const screenKm   = window.innerWidth * currentScale;
+    const lightCross = screenKm / LIGHT_SPEED_KM_S;
+    const distToSun  = Math.abs(scrollPos) * currentScale;
+
+    const pxEl  = document.getElementById('si-px');
+    const detEl = document.getElementById('si-details');
+    const arrEl = document.getElementById('si-arrow');
+
+    if (pxEl)  pxEl.textContent  = `1 PIXEL = ${formatKm(currentScale)}`;
+    if (detEl) detEl.textContent = `TELA = ${formatKm(screenKm)}  ·  LUZ CRUZA EM ${formatTime(lightCross)}`;
+    if (arrEl) arrEl.textContent = `── ── SOL A ${formatKm(distToSun)} ──▶`;
 }
 
 function updateUI() {
@@ -1081,6 +1117,10 @@ function startProgrammedAnim(targetDistKm, targetS, onComplete = null, duration 
 // ─── Loop de Animação ────────────────────────────────────────────────────────
 
 function animate(now) {
+    // Delta time in seconds — capped at 100ms to avoid jumps after tab pause
+    const dt = prevFrameTime !== null ? Math.min((now - prevFrameTime) / 1000, 0.1) : 1 / 60;
+    prevFrameTime = now;
+
     let dirty = false;
 
     if (isAnimating) {
@@ -1109,7 +1149,7 @@ function animate(now) {
         const speedKmS = (tourActive && tourTransitSpeedKmS !== null)
             ? tourTransitSpeedKmS
             : LIGHT_SPEED_KM_S;
-        scrollPos += (speedKmS / currentScale) / 60;
+        scrollPos += (speedKmS / currentScale) * dt;
         dirty = true;
 
         const currentKm = scrollPos * currentScale;
@@ -1148,7 +1188,7 @@ function animate(now) {
         const t = Math.min(elapsed / 1000, 1);
         const eased = 1 - t * t; // quadratic ease-out
         if (eased > 0) {
-            scrollPos += (lightspeedDecelSpeed / currentScale) * eased / 60;
+            scrollPos += (lightspeedDecelSpeed / currentScale) * eased * dt;
             dirty = true;
         }
         if (t >= 1) {
@@ -1308,15 +1348,14 @@ function closePlanetDetail() {
 
 function startFreeMode() {
     const overlay = document.getElementById('welcome-overlay');
-    if (overlay) overlay.style.display = 'none';
+    if (!overlay || overlay.classList.contains('fading') || overlay.style.display === 'none') return;
 
-    // Sugere a direção correta ao iniciar
-    if (typeof showManeuverMsg === 'function') {
-        showManeuverMsg("BEM-VINDO AO PÁLIDO PONTO AZUL.\nArraste ou role para a DIREITA para começar sua jornada.");
-    }
-    
-    // Começa no Sol (0 km)
-    scrollPos = 0;
+    // Fade the overlay out seamlessly — universe is already visible behind it
+    overlay.classList.add('fading');
+    setTimeout(() => { overlay.style.display = 'none'; }, 700);
+
+    // Start one viewport-width before the Sun so the scale intro is visible
+    scrollPos = -window.innerWidth / 2;
     updateScroll();
 
     const lightspeedBtn = document.getElementById('lightspeed-btn');

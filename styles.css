@@ -596,6 +596,12 @@ body.dragging #universe { cursor: grabbing; }
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    transition: opacity 0.65s ease;
+}
+
+#welcome-overlay.fading {
+    opacity: 0;
+    pointer-events: none;
 }
 
 #pale-blue-dot-sim {
@@ -610,13 +616,19 @@ body.dragging #universe { cursor: grabbing; }
 .sun-beam {
     position: absolute;
     width: 200%;
-    height: 28px;
-    background: rgba(255, 255, 255, 0.028);
+    height: 80px;
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(255, 255, 255, 0.028) 22%,
+        rgba(255, 255, 255, 0.028) 78%,
+        transparent 100%
+    );
     transform: rotate(115deg);
     transform-origin: 53% 50%;
     top: 44%;
     left: -50%;
-    box-shadow: 0 0 40px 10px rgba(255, 200, 120, 0.035);
+    box-shadow: 0 0 60px 20px rgba(255, 200, 120, 0.04);
 }
 
 #the-dot {
@@ -650,33 +662,6 @@ body.dragging #universe { cursor: grabbing; }
     font-weight: 400;
 }
 
-#welcome-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-}
-
-#start-btn {
-    background: transparent;
-    border: 1px solid rgba(0, 170, 255, 0.5);
-    color: rgba(0, 170, 255, 0.7);
-    padding: 14px 44px;
-    font-family: inherit;
-    font-size: 10px;
-    cursor: pointer;
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    transition: 0.4s;
-    font-weight: 500;
-}
-
-#start-btn:hover {
-    background: rgba(0, 170, 255, 0.08);
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-}
-
 #scroll-hint {
     position: absolute;
     bottom: 40px;
@@ -693,13 +678,13 @@ body.dragging #universe { cursor: grabbing; }
 #scroll-hint-arrow {
     font-size: 16px;
     letter-spacing: 8px;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.45);
 }
 
 #scroll-hint-label {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 5px;
-    color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.32);
     text-transform: uppercase;
     white-space: nowrap;
 }
@@ -707,6 +692,53 @@ body.dragging #universe { cursor: grabbing; }
 @keyframes hint-float {
     0%, 100% { opacity: 0.5; transform: translateX(-50%) translateX(0); }
     50%       { opacity: 1;   transform: translateX(-50%) translateX(8px); }
+}
+
+/* ─── Zona de Escala (pré-Sol) ──────────────────────────────────── */
+
+#scale-intro {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+    pointer-events: none;
+    z-index: 100;
+    transition: opacity 0.4s ease;
+}
+
+.si-label {
+    font-size: 8px;
+    letter-spacing: 5px;
+    color: rgba(255, 255, 255, 0.15);
+    text-transform: uppercase;
+}
+
+.si-main {
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.si-sub {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(0, 170, 255, 0.45);
+    text-transform: uppercase;
+}
+
+.si-arrow {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: rgba(255, 255, 255, 0.18);
+    text-transform: uppercase;
+    margin-top: 8px;
 }
 
 /* ─── Configurações ─────────────────────────────────────────────── */
@@ -1618,14 +1650,29 @@ body.dragging #universe { cursor: grabbing; }
 
     /* Welcome Overlay */
     #welcome-title {
-        font-size: 18px;
-        letter-spacing: 5px;
+        font-size: 24px;
+        letter-spacing: 6px;
     }
 
-    #start-btn {
-        padding: 16px 32px;
-        width: 80vw;
+    #welcome-subtitle {
+        font-size: 12px;
+        letter-spacing: 4px;
     }
+
+    #scroll-hint-label {
+        font-size: 11px;
+        letter-spacing: 4px;
+        color: rgba(255, 255, 255, 0.45);
+    }
+
+    #scroll-hint-arrow {
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Scale intro */
+    .si-main { font-size: 16px; }
+    .si-sub  { font-size: 8px; }
 }
 
 /* ---------- Phone landscape (height ≤ 440px) --------------------- */
