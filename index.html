@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>O Pálido Ponto Azul - Simulador de Escala Astronômica</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="styles.css">
@@ -81,7 +81,9 @@
 
     <!-- Botão de Velocidade da Luz -->
     <button id="lightspeed-btn" class="intro" title="Velocidade da Luz">
-        <span id="photon" class="btn-icon">⚡</span>
+        <span id="photon" class="btn-icon">
+            <img src="photos/c.svg" alt="c" style="width: 20px; height: 20px;">
+        </span>
         <span id="lightspeed-text">VELOCIDADE DA LUZ</span>
     </button>
 
@@ -109,6 +111,10 @@
         <p id="welcome-subtitle">Simulador de Escala Astronômica</p>
         <div id="welcome-actions">
             <button id="start-btn">INICIAR JORNADA</button>
+        </div>
+        <div id="scroll-hint">
+            <div id="scroll-hint-arrow">─ ─ ─ →</div>
+            <div id="scroll-hint-label">ROLE OU DESLIZE PARA COMEÇAR</div>
         </div>
     </div>
 

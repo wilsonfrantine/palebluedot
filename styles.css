@@ -17,7 +17,11 @@ body {
     font-weight: 500;
     overflow: hidden;
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
+    width: 100dvw;
+    overscroll-behavior: none;
+    touch-action: none;
 }
 
 /* ─── Campo de Estrelas ─────────────────────────────────────────── */
@@ -80,10 +84,13 @@ body {
 #universe {
     position: relative;
     height: 100vh;
-    width: 2500000px;
+    height: 100dvh;
+    width: 100vw;
+    width: 100dvw;
     display: flex;
     align-items: center;
     cursor: grab;
+    overflow: hidden;
 }
 
 body.dragging #universe { cursor: grabbing; }
@@ -670,6 +677,37 @@ body.dragging #universe { cursor: grabbing; }
     color: var(--accent-color);
 }
 
+#scroll-hint {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    animation: hint-float 2.4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+#scroll-hint-arrow {
+    font-size: 16px;
+    letter-spacing: 8px;
+    color: rgba(255, 255, 255, 0.25);
+}
+
+#scroll-hint-label {
+    font-size: 8px;
+    letter-spacing: 5px;
+    color: rgba(255, 255, 255, 0.18);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+@keyframes hint-float {
+    0%, 100% { opacity: 0.5; transform: translateX(-50%) translateX(0); }
+    50%       { opacity: 1;   transform: translateX(-50%) translateX(8px); }
+}
 
 /* ─── Configurações ─────────────────────────────────────────────── */
 
@@ -973,24 +1011,24 @@ body.dragging #universe { cursor: grabbing; }
 }
 
 .wp-label {
-    font-size: 18px;
-    letter-spacing: 4px;
-    color: rgba(255, 255, 255, 0.38);
+    font-size: 32px;
+    letter-spacing: 6px;
+    color: #ffffff;
     text-transform: uppercase;
     font-weight: 500;
 }
 
 .wp-dist {
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: rgba(0, 170, 255, 0.55);
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--accent-color);
     text-transform: uppercase;
 }
 
 .wp-detail {
-    font-size: 8px;
-    letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.16);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #aabbcc;
     text-transform: uppercase;
 }
 
@@ -1455,54 +1493,138 @@ body.dragging #universe { cursor: grabbing; }
 
 /* ---------- Phone (≤ 600px): collapsible minimap + lateral panel - */
 @media (max-width: 600px) {
-    :root { --ruler-h: 13vh; }
-
-    /* When expanded on small screens, float over everything */
-    #minimap-container:not(.collapsed) {
-        z-index: 9000;
-        width: calc(100% - 56px);
+    :root { 
+        --ruler-h: 120px; 
     }
 
-    /* Detail panel stays on the left, lateral collapse only */
+    body {
+        /* Evita problemas com a barra de endereços no mobile */
+        height: -webkit-fill-available;
+    }
+
+    /* Minimapa mais compacto e com toque facilitado */
+    #minimap-container {
+        width: 100% !important;
+        padding: 10px 10px 5px !important;
+    }
+
+    #minimap-header {
+        font-size: 8px;
+        letter-spacing: 2px;
+        color: #8899aa;
+    }
+
+    .minimap-dot-label {
+        display: none; /* Esconde nomes no minimapa em telas muito pequenas */
+    }
+
+    .minimap-body {
+        padding: 12px 8px; /* Área de toque maior */
+    }
+
+    /* Ajuste da navegação inferior do minimapa */
+    #nav-row {
+        gap: 2px;
+    }
+
+    .nav-arrow-btn {
+        font-size: 9px;
+        padding: 8px 4px;
+        color: #aabbcc;
+    }
+
+    #nav-current-name {
+        font-size: 9px;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #ffffff;
+    }
+
+    /* Painel de detalhes: 88vw para que o botão de colapso fique visível */
     #planet-detail-panel {
         top: 0;
-        width: 85vw;
-        left: calc(-85vw - 30px); /* fully off + button clearance */
-        bottom: var(--ruler-h);
+        width: 88vw;
+        left: -88vw;
+        bottom: 0;
+        border-right: none;
+        z-index: 10000;
     }
 
     #planet-detail-panel.open { left: 0; }
+    
+    #planet-detail-panel.open.collapsed { left: calc(-88vw + 32px); }
 
-    /* Fully collapsed: off-screen, button visible at x≈0 */
-    #planet-detail-panel.open.collapsed { left: calc(-85vw - 6px); }
+    #planet-detail-inner {
+        padding: 60px 20px 140px; /* Espaço para o botão fechar e régua */
+    }
 
-    /* Button still protrudes at right: -24px — no change needed */
+    #detail-collapse-btn {
+        right: -32px;
+        width: 32px;
+        height: 80px;
+        font-size: 14px;
+        background: var(--accent-color);
+        color: #000;
+        border: none;
+        border-radius: 0 8px 8px 0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
 
-    .info-item:nth-child(2),
-    .info-item:nth-child(3) { display: none; }
+    /* Esconde a aba de colapso enquanto o painel não foi aberto */
+    #planet-detail-panel:not(.open) #detail-collapse-btn {
+        display: none;
+    }
 
-    #msg-overlay {
+    /* Régua Astronômica: Info mais compacta */
+    #astronomical-ruler {
+        height: var(--ruler-h);
+        padding: 10px 10px;
+    }
+
+    #info-display {
+        gap: 5px;
+        padding-top: 5px;
+    }
+
+    .info-item {
+        padding: 0 5px;
+        flex: 1;
+    }
+
+    .info-value {
         font-size: 11px;
-        width: calc(100% - 24px);
     }
 
-    #settings-panel {
-        width: 100%;
-        right: 0;
-        top: 0;
-        border-radius: 0;
-        max-height: 65vh;
-        overflow-y: auto;
+    /* Botão de Velocidade da Luz e Zoom Out */
+    #lightspeed-btn {
+        bottom: calc(var(--ruler-h) + 10px);
+        right: 10px;
+        padding: 12px;
     }
 
-    #credits-panel { align-items: flex-end; }
-    #credits-box {
-        width: 100%;
-        max-width: 100%;
-        border-left: none;
-        border-right: none;
-        border-bottom: none;
-        padding: 32px 24px 28px;
+    #zoom-out-btn {
+        bottom: calc(var(--ruler-h) + 70px);
+        right: 10px;
+        padding: 10px 12px;
+    }
+
+    /* Mensagens centrais: sobe um pouco para não cobrir botões */
+    #msg-overlay {
+        bottom: calc(var(--ruler-h) + 130px);
+        font-size: 12px;
+        padding: 0 15px;
+    }
+
+    /* Welcome Overlay */
+    #welcome-title {
+        font-size: 18px;
+        letter-spacing: 5px;
+    }
+
+    #start-btn {
+        padding: 16px 32px;
+        width: 80vw;
     }
 }
 

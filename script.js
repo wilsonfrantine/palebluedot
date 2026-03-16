@@ -769,6 +769,40 @@ function setupEvents() {
         document.body.classList.remove('dragging');
     });
 
+    // Touch events for mobile navigation
+    window.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            isDragging = true;
+            dragStartX = e.touches[0].clientX;
+            dragStartScrollPos = scrollPos;
+            // Evita o comportamento padrão de "pull to refresh" ou scroll da página
+            if (e.target.closest('#universe') || e.target.closest('body')) {
+                // Não cancelamos se for em botões ou painéis interativos
+                if (!e.target.closest('button') && !e.target.closest('input')) {
+                    // e.preventDefault(); // Removido para permitir scroll em painéis se necessário
+                }
+            }
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isDragging || e.touches.length !== 1) return;
+        
+        const dx = dragStartX - e.touches[0].clientX;
+        if (tourActive && Math.abs(dx) > 10) interruptTour();
+        
+        isAnimating = false;
+        scrollPos = Math.max(-window.innerWidth / 2, dragStartScrollPos + dx);
+        updateScroll();
+        
+        // Impede o scroll nativo da página enquanto arrasta no simulador
+        if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+        isDragging = false;
+    });
+
     // Redimensionamento
     window.addEventListener('resize', () => {
         updateUniversePositions();
@@ -873,6 +907,24 @@ function setupEvents() {
 
     const startBtn = document.getElementById('start-btn');
     if (startBtn) startBtn.onclick = startFreeMode;
+
+    // Scroll / swipe na tela inicial dispara a jornada
+    const welcomeOverlay = document.getElementById('welcome-overlay');
+    if (welcomeOverlay) {
+        welcomeOverlay.addEventListener('wheel', (e) => {
+            if (e.deltaY > 5 || e.deltaX > 5) startFreeMode();
+        }, { passive: true });
+        let _wTouchX = 0, _wTouchY = 0;
+        welcomeOverlay.addEventListener('touchstart', (e) => {
+            _wTouchX = e.touches[0].clientX;
+            _wTouchY = e.touches[0].clientY;
+        }, { passive: true });
+        welcomeOverlay.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - _wTouchX;
+            const dy = _wTouchY - e.changedTouches[0].clientY; // swipe up = positive
+            if (dx > 40 || dy > 40) startFreeMode();
+        }, { passive: true });
+    }
 
     // Toggle de configurações
     const settingsToggle = document.getElementById('settings-toggle');
@@ -1242,7 +1294,14 @@ function openPlanetDetail(body) {
 
 function closePlanetDetail() {
     const panel = document.getElementById('planet-detail-panel');
-    if (panel) panel.classList.remove('open');
+    if (panel) {
+        panel.classList.remove('open');
+        panel.classList.remove('collapsed');
+    }
+    
+    // Reseta o ícone do botão de colapso para quando abrir novamente
+    const collapseBtn = document.getElementById('detail-collapse-btn');
+    if (collapseBtn) collapseBtn.textContent = '◀';
 }
 
 // ─── Tour Guiado ─────────────────────────────────────────────────────────────
@@ -1250,6 +1309,16 @@ function closePlanetDetail() {
 function startFreeMode() {
     const overlay = document.getElementById('welcome-overlay');
     if (overlay) overlay.style.display = 'none';
+
+    // Sugere a direção correta ao iniciar
+    if (typeof showManeuverMsg === 'function') {
+        showManeuverMsg("BEM-VINDO AO PÁLIDO PONTO AZUL.\nArraste ou role para a DIREITA para começar sua jornada.");
+    }
+    
+    // Começa no Sol (0 km)
+    scrollPos = 0;
+    updateScroll();
+
     const lightspeedBtn = document.getElementById('lightspeed-btn');
     if (lightspeedBtn) lightspeedBtn.classList.remove('intro');
 }
