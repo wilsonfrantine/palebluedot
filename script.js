@@ -6,6 +6,11 @@ const LIGHT_SPEED_KM_S = 299792;
 const UA_KM = 149597871;
 const AL_KM = 9460730472580;
 
+// Distância de início: 15M km no desktop, 4M km no smartphone
+function startDistKm() {
+    return window.innerWidth > 600 ? -15_000_000 : -4_000_000;
+}
+
 // Escala máxima do minimapa: inclui Éris com folga
 const MINIMAP_MAX_KM = 11_000_000_000;
 
@@ -53,6 +58,10 @@ let scrollPos    = 0;
 let sensitivity  = 1;
 let isLightSpeed = false;
 let isLightspeedManual = false; // Scroll sem warp via botão manual
+
+let measureActive = false;
+let measureKmA    = null;
+let measureKmB    = null;
 
 // Tour guiado
 let tourActive       = false;
@@ -169,6 +178,137 @@ function formatTime(sec) {
     return `${(sec / YEAR).toFixed(2)} anos`;
 }
 
+function formatMeasureDistance(km) {
+    const au   = km / UA_KM;
+    const ls   = km / LIGHT_SPEED_KM_S;
+
+    const kmStr = km >= 1e9
+        ? `${(km / 1e9).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} bi km`
+        : km >= 1e6
+            ? `${(km / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} M km`
+            : `${Math.round(km).toLocaleString('pt-BR')} km`;
+
+    const auStr = au >= 0.001 ? `${au.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} UA` : null;
+
+    let timeStr;
+    if      (ls < 60)        timeStr = `${ls.toFixed(1)} s de luz`;
+    else if (ls < 3600)      timeStr = `${(ls / 60).toFixed(1)} min de luz`;
+    else if (ls < 86400)     timeStr = `${(ls / 3600).toFixed(1)} h de luz`;
+    else if (ls < 31536000)  timeStr = `${(ls / 86400).toFixed(1)} dias de luz`;
+    else                     timeStr = `${(ls / 31536000).toFixed(2)} anos-luz`;
+
+    return { main: auStr || kmStr, sub1: auStr ? kmStr : '', sub2: timeStr };
+}
+
+function handleMeasurePoint(clientX) {
+    const km = (clientX - window.innerWidth / 2) * currentScale + scrollPos * currentScale;
+    if (measureKmA === null) {
+        measureKmA = km;
+    } else if (measureKmB === null) {
+        measureKmB = km;
+    } else {
+        // Terceiro clique: reinicia com novo ponto A
+        measureKmA = km;
+        measureKmB = null;
+    }
+    updateMeasureOverlay();
+}
+
+function toggleMeasure() {
+    measureActive = !measureActive;
+    if (!measureActive) {
+        measureKmA = null;
+        measureKmB = null;
+    }
+    document.body.classList.toggle('measure-active', measureActive);
+    const btn = document.getElementById('measure-btn');
+    if (btn) btn.classList.toggle('active', measureActive);
+    updateMeasureOverlay();
+}
+
+function updateMeasureOverlay() {
+    const tickA  = document.getElementById('measure-tick-a');
+    const dotA   = document.getElementById('measure-dot-a');
+    const badgeA = document.getElementById('measure-badge-a');
+    const tickB  = document.getElementById('measure-tick-b');
+    const dotB   = document.getElementById('measure-dot-b');
+    const badgeB = document.getElementById('measure-badge-b');
+    const span   = document.getElementById('measure-span');
+    const dist   = document.getElementById('measure-distance');
+    const hint   = document.getElementById('measure-hint');
+    if (!tickA) return;
+
+    const visible = measureActive || measureKmA !== null;
+
+    // Hint text
+    if (hint) {
+        if (!measureActive) {
+            hint.style.display = 'none';
+        } else if (measureKmA === null) {
+            hint.textContent = 'Clique para marcar o ponto A';
+            hint.style.display = 'block';
+        } else if (measureKmB === null) {
+            hint.textContent = 'Clique para marcar o ponto B';
+            hint.style.display = 'block';
+        } else {
+            hint.textContent = 'Clique para nova medição';
+            hint.style.display = 'block';
+        }
+    }
+
+    // Posição vertical da régua: 42% do viewport
+    const barY  = Math.round(window.innerHeight * 0.42);
+    const dotY  = barY;
+    const badgeOffset = 14;
+
+    const showPoint = (tick, dot, badge, km) => {
+        if (km === null) {
+            tick.style.display = dot.style.display = badge.style.display = 'none';
+            return;
+        }
+        const x = Math.round(screenX(km));
+        tick.style.display  = 'block';
+        tick.style.left     = x + 'px';
+        dot.style.display   = 'block';
+        dot.style.left      = x + 'px';
+        dot.style.top       = (dotY - 4) + 'px';
+        badge.style.display = 'block';
+        badge.style.left    = x + 'px';
+        badge.style.top     = (dotY + badgeOffset) + 'px';
+    };
+
+    showPoint(tickA, dotA, badgeA, measureKmA);
+    showPoint(tickB, dotB, badgeB, measureKmB);
+
+    if (measureKmA !== null && measureKmB !== null) {
+        const xA   = screenX(measureKmA);
+        const xB   = screenX(measureKmB);
+        const left  = Math.min(xA, xB);
+        const width = Math.abs(xB - xA);
+        const midX  = left + width / 2;
+
+        span.style.display = 'block';
+        span.style.left    = left + 'px';
+        span.style.width   = width + 'px';
+        span.style.top     = barY + 'px';
+
+        const fmt = formatMeasureDistance(Math.abs(measureKmB - measureKmA));
+        document.getElementById('measure-dist-main').textContent = fmt.main;
+        document.getElementById('measure-dist-km').textContent   = fmt.sub1;
+        document.getElementById('measure-dist-time').textContent = fmt.sub2;
+        dist.style.display = 'block';
+        dist.style.left    = midX + 'px';
+        dist.style.top     = (barY - 16) + 'px';
+        dist.style.transform = 'translateX(-50%) translateY(-100%)';
+    } else {
+        span.style.display = dist.style.display = 'none';
+    }
+
+    if (!visible) {
+        [tickA, dotA, badgeA, tickB, dotB, badgeB, span, dist].forEach(el => el.style.display = 'none');
+    }
+}
+
 function formatKm(km) {
     if (km <= 0) return '0 km';
     if (km >= UA_KM * 10) return (km / AL_KM).toFixed(8) + ' AL';
@@ -214,7 +354,7 @@ function init() {
     buildInfoDisplay();
     setupEvents();
     currentScale = 3000;
-    scrollPos    = -4_000_000 / currentScale; // start at welcome overlay position
+    scrollPos    = startDistKm() / currentScale; // start at welcome overlay position
     // Collapse minimap by default on small screens
     if (window.innerWidth <= 600 || (window.innerHeight <= 440 && window.innerWidth > window.innerHeight)) {
         const mc = document.getElementById('minimap-container');
@@ -590,11 +730,9 @@ function updateUniversePositions() {
         if (el.dataset.dismissed === '1') return;
         const sx = screenX(wp.km);
         if (sx < -MARGIN || sx > vw + MARGIN) { el.style.display = 'none'; return; }
-        // Hide if within 2M km of any planet (planet labels handle identification)
-        const nearPlanet = celestialBodies.some(b => Math.abs(b.dist - wp.km) < 2_000_000);
         // Hide waypoints the user has passed (> 2M km behind)
         const isPast = wp.km < currentKm - 2_000_000;
-        if (nearPlanet || isPast) { el.style.display = 'none'; return; }
+        if (isPast) { el.style.display = 'none'; return; }
         el.style.display = '';
         el.style.left = sx + 'px';
     });
@@ -742,7 +880,7 @@ function setupEvents() {
         } else {
             isAnimating = false;
             scrollPos += e.deltaY * sensitivity;
-            scrollPos = Math.max(-4_000_000 / currentScale, scrollPos);
+            scrollPos = Math.max(startDistKm() / currentScale, scrollPos);
             updateScroll();
         }
     }, { passive: false });
@@ -760,7 +898,7 @@ function setupEvents() {
         const dx = dragStartX - e.clientX;
         if (tourActive && Math.abs(dx) > 6) interruptTour();
         isAnimating = false;
-        scrollPos = Math.max(-4_000_000 / currentScale, dragStartScrollPos + dx);
+        scrollPos = Math.max(startDistKm() / currentScale, dragStartScrollPos + dx);
         updateScroll();
     });
 
@@ -820,7 +958,7 @@ function setupEvents() {
 
         isAnimating = false;
 
-        const minScroll = -4_000_000 / currentScale;
+        const minScroll = startDistKm() / currentScale;
         const maxScroll = MINIMAP_MAX_KM / currentScale;
         scrollPos = Math.max(minScroll, Math.min(maxScroll, dragStartScrollPos + dx));
 
@@ -828,8 +966,18 @@ function setupEvents() {
         if (e.cancelable) e.preventDefault();
     }, { passive: false });
 
-    window.addEventListener('touchend', () => {
+    window.addEventListener('touchend', (e) => {
         isDragging = false;
+
+        // Régua: tap detectado se deslocamento < 12px
+        if (measureActive && e.changedTouches.length === 1) {
+            const dx = Math.abs(e.changedTouches[0].clientX - dragStartX);
+            if (dx < 12) {
+                handleMeasurePoint(e.changedTouches[0].clientX);
+                touchVelocity = 0;
+                return;
+            }
+        }
 
         if (Math.abs(touchVelocity) > 0.1) {
             applyInertia();
@@ -838,7 +986,7 @@ function setupEvents() {
 
     function applyInertia() {
         const friction = 0.97;
-        const minScroll = -4_000_000 / currentScale;
+        const minScroll = startDistKm() / currentScale;
         const maxScroll = MINIMAP_MAX_KM / currentScale;
 
         scrollPos += touchVelocity * 16 * sensitivity;
@@ -886,6 +1034,17 @@ function setupEvents() {
             }
             updateFreeLightspeedBtn();
         };
+    }
+
+    // Régua Interativa
+    const measureBtn = document.getElementById('measure-btn');
+    if (measureBtn) measureBtn.onclick = toggleMeasure;
+
+    const measureCapture = document.getElementById('measure-capture');
+    if (measureCapture) {
+        measureCapture.addEventListener('click', (e) => {
+            handleMeasurePoint(e.clientX);
+        });
     }
 
     // Painel de Detalhes
@@ -1011,6 +1170,7 @@ function updateScroll() {
     updateUI();
     updateWelcomeOverlay();
     updateScaleIntro();
+    updateMeasureOverlay();
 }
 
 const RULER_START_KM = -1_000_000; // régua começa 1M km antes do Sol
@@ -1030,7 +1190,7 @@ function updateWelcomeOverlay() {
     const ws = document.getElementById('welcome-screen');
     if (!ws) return;
     // Slide with the universe: translate so the screen is centered at km = -4M
-    const offsetPx = screenX(-4_000_000) - window.innerWidth / 2;
+    const offsetPx = screenX(startDistKm()) - window.innerWidth / 2;
     ws.style.transform = `translateX(${offsetPx}px)`;
     // Pointer events only when close to viewport (within 1 screen width)
     ws.style.pointerEvents = Math.abs(offsetPx) < window.innerWidth ? 'auto' : 'none';
@@ -1043,19 +1203,25 @@ function updateScaleIntro() {
     const km = scrollPos * currentScale;
 
     // Visível apenas entre a tela de início e o Sol (-4M a 0 km)
-    if (km <= -4_000_000 || scrollPos >= 0) {
+    if (km <= startDistKm() || scrollPos >= 0) {
         si.style.display = 'none';
         return;
     }
 
     si.style.display = 'flex';
 
-    // Fade in: -3M → -2.5M (0 → 1); Fade out: -1M → 0 (1 → 0)
+    // Fade-in proporcional à distância de início (desktop vs mobile)
+    // Aparece após percorrer ~25% do caminho; some no último 25%
+    const start       = startDistKm();          // ex: -15M desktop, -4M mobile
+    const fadeInStart = start * 0.75;           // -11.25M / -3M
+    const fadeInEnd   = start * 0.60;           // -9M / -2.4M
+    const fadeOutKm   = start * 0.25;           // -3.75M / -1M
+
     let opacity = 1;
-    if (km < -2_500_000) {
-        opacity = (km - (-3_000_000)) / 500_000;         // 0→1 entre -3M e -2.5M
-    } else if (km > -1_000_000) {
-        opacity = km / (-1_000_000);                      // 1→0 entre -1M e 0
+    if (km < fadeInEnd) {
+        opacity = (km - fadeInStart) / (fadeInEnd - fadeInStart);
+    } else if (km > fadeOutKm) {
+        opacity = km / fadeOutKm;
     }
     si.style.opacity = Math.max(0, Math.min(1, opacity));
 
@@ -1078,10 +1244,16 @@ function updateUI() {
     const distAL  = distKm / AL_KM;
     const lightSec = distKm / LIGHT_SPEED_KM_S;
 
-    // Oculta botão de velocidade da luz antes do Sol (0 km)
-    const lsBtn = document.getElementById('lightspeed-btn');
-    if (lsBtn) {
-        lsBtn.style.display = distKm < 0 ? 'none' : 'flex';
+    // Oculta botões e minimapa antes do Sol (0 km)
+    const lsBtn  = document.getElementById('lightspeed-btn');
+    const mBtn   = document.getElementById('measure-btn');
+    const mmCont = document.getElementById('minimap-container');
+    if (lsBtn)  lsBtn.style.display  = distKm < 0 ? 'none' : 'flex';
+    if (mBtn)   mBtn.style.display   = distKm < 0 ? 'none' : 'flex';
+    if (mmCont) {
+        const wasHidden = mmCont.style.display === 'none';
+        mmCont.style.display = distKm < 0 ? 'none' : '';
+        if (wasHidden && distKm >= 0) setTimeout(createMinimap, 350);
     }
 
     // Só atualiza os spans quando o valor muda de forma perceptível
@@ -1141,8 +1313,13 @@ function updateRuler() {
     rulerTicks.innerHTML = '';
     const halfWidth  = window.innerWidth / 2;
     const sunX       = halfWidth - scrollPos;  // screenX(0)
-    const rulerLeft  = rulerLeftPx();          // mesma fórmula do container — sem desalinhamento
-    const rulerWidth = window.innerWidth - rulerLeft;
+    const rulerLeft  = rulerLeftPx();          // borda esquerda do #astronomical-ruler
+    // .ruler-ticks vive no content box do ruler (após o padding-left).
+    // A origem real dos ticks na tela é rulerLeft + paddingLeft, não rulerLeft.
+    const rulerEl2   = document.getElementById('astronomical-ruler');
+    const padLeft    = rulerEl2 ? parseInt(window.getComputedStyle(rulerEl2).paddingLeft) : 20;
+    const tickOrigin = rulerLeft + padLeft;    // screen-x real do left de .ruler-ticks
+    const rulerWidth = window.innerWidth - tickOrigin;
 
     // Ticks apenas para km ≥ 0
     const offset   = scrollPos - halfWidth;
@@ -1150,7 +1327,7 @@ function updateRuler() {
     const endIdx   = startIdx + Math.ceil(rulerWidth / stepPx) + 1;
 
     for (let i = startIdx; i <= endIdx; i++) {
-        const tickX = (i * stepPx + sunX) - rulerLeft;
+        const tickX = (i * stepPx + sunX) - tickOrigin;
         if (tickX < 0 || tickX > rulerWidth) continue;
         const tick     = document.createElement('div');
         const isMajor  = i % 10 === 0;
@@ -1165,20 +1342,6 @@ function updateRuler() {
         rulerTicks.appendChild(tick);
     }
 
-    // Marcador de 1 UA (relativo à borda da régua)
-    const uaTickX = (UA_KM / currentScale + sunX) - rulerLeft;
-    if (uaTickX >= 0 && uaTickX <= rulerWidth) {
-        const uaTick = document.createElement('div');
-        uaTick.className        = 'tick major';
-        uaTick.style.left       = uaTickX + 'px';
-        uaTick.style.background = '#ff5555';
-        const uaLbl = document.createElement('div');
-        uaLbl.className  = 'tick-label';
-        uaLbl.style.color = '#ff8888';
-        uaLbl.innerText  = '1 UA';
-        uaTick.appendChild(uaLbl);
-        rulerTicks.appendChild(uaTick);
-    }
 }
 
 // ─── Animação Programada ─────────────────────────────────────────────────────
@@ -1248,7 +1411,6 @@ function animate(now) {
         // Tour: detecta cruzamento do limiar para ativar dobra
         if (tourActive && warpThresholdKm !== null && currentKm >= warpThresholdKm) {
             isLightSpeed        = false;
-            isLightspeedManual  = false;
             tourTransitSpeedKmS = null;
             warpThresholdKm     = null;
             isWarpVisual        = true;
@@ -1397,8 +1559,11 @@ function openPlanetDetail(body) {
     const statsEl = document.getElementById('planet-detail-stats');
     if (statsEl) {
         const rows = [
-            ['Distância do Sol',  body.dist === 0 ? '—' : formatKm(body.dist)],
+            ['Distância do Sol',  body.dist === 0 ? '0 km' : formatKm(body.dist)],
+            ['Distância em UA',   data.distAU === "0" ? '—' : `${data.distAU} UA`],
             ['Diâmetro',          `${(body.size * 1000).toLocaleString('pt-BR')} km`],
+            ['Massa (Terra = 1)', data.massEarth || '—'],
+            ['Gravidade',         data.gravity || '—'],
             ['Temperatura',       data.temp],
             ['Período Orbital',   data.period],
             ['Tempo de Luz',      body.dist === 0 ? '—' : formatTime(body.dist / LIGHT_SPEED_KM_S)],
@@ -1470,24 +1635,30 @@ function beginTour() {
     updateTourResumeBtn();
 }
 
-function interruptTour() {
+// Para todo movimento propulsado e limpa todos os timers de tour.
+// Não altera tourActive, tourStepIdx nem faz cleanup de UI — isso fica a cargo do chamador.
+function _stopAllMotion() {
     if (tourPauseTimeout) { clearTimeout(tourPauseTimeout); tourPauseTimeout = null; }
     if (holdTimeout)      { clearTimeout(holdTimeout);      holdTimeout = null; }
     if (warpOffTimeout)   { clearTimeout(warpOffTimeout);   warpOffTimeout = null; }
     tourWaypointTimeouts.forEach(clearTimeout);
-    tourWaypointTimeouts = [];
+    tourWaypointTimeouts   = [];
     animCallback           = null;
     isAnimating            = false;
     isLightSpeed           = false;
     isWarpVisual           = false;
     lightspeedDecelerating = false;
     lightspeedDecelStart   = null;
-    tourActive             = false;
     tourTransitSpeedKmS    = null;
     warpThresholdKm        = null;
+}
+
+function interruptTour() {
+    _stopAllMotion();
+    tourActive = false;
     document.body.classList.remove('tour-intro-zooming');
     hideTourMsg();
-    // tourStepIdx preserved so the user can resume
+    // tourStepIdx preservado para permitir retomada
     const lightspeedBtn = document.getElementById('lightspeed-btn');
     if (lightspeedBtn) lightspeedBtn.style.display = '';
     updateFreeLightspeedBtn();
@@ -1527,21 +1698,9 @@ function updateTourResumeBtn() {
 
 function endTour() {
     hideConfirmExitTour();
-    tourActive             = false;
-    tourStepIdx            = -1;
-    isLightSpeed           = false;
-    isWarpVisual           = false;
-    lightspeedDecelerating = false;
-    lightspeedDecelStart   = null;
-    tourTransitSpeedKmS    = null;
-    warpThresholdKm        = null;
-    if (tourPauseTimeout) { clearTimeout(tourPauseTimeout); tourPauseTimeout = null; }
-    if (holdTimeout)      { clearTimeout(holdTimeout);      holdTimeout = null; }
-    if (warpOffTimeout)   { clearTimeout(warpOffTimeout);   warpOffTimeout = null; }
-    tourWaypointTimeouts.forEach(clearTimeout);
-    tourWaypointTimeouts = [];
-    animCallback = null;
-    isAnimating  = false;
+    _stopAllMotion();
+    tourActive  = false;
+    tourStepIdx = -1;
     document.body.classList.remove('tour-intro-zooming');
     hideTourMsg();
     closePlanetDetail();
@@ -1616,25 +1775,10 @@ function advanceTour() {
 
     showTourTransit();
 
-    // Zoom out se necessário, depois ativa lightspeed
-    if (currentScale < 1500) {
-        startProgrammedAnim(fromDist, 3000, () => {
-            if (!tourActive) return;
-            // Fato de tempo de luz após o zoom-out
-            const lightTime = Math.abs((toDist - fromDist) / LIGHT_SPEED_KM_S);
-            const fromName  = currBody ? currBody.name : 'aqui';
-            showMsgOverlay(
-                `A luz leva ${formatTime(lightTime)} de ${fromName} até ${nextBody.name}.`,
-                5000
-            );
-            tourPauseTimeout = setTimeout(() => {
-                if (!tourActive) return;
-                _startTourLightspeed(wpsInRange);
-            }, 2000);
-        });
-    } else {
-        const lightTime = Math.abs((toDist - fromDist) / LIGHT_SPEED_KM_S);
-        const fromName  = currBody ? currBody.name : 'aqui';
+    const lightTime = Math.abs((toDist - fromDist) / LIGHT_SPEED_KM_S);
+    const fromName  = currBody ? currBody.name : 'aqui';
+    const doLaunch  = () => {
+        if (!tourActive) return;
         showMsgOverlay(
             `A luz leva ${formatTime(lightTime)} de ${fromName} até ${nextBody.name}.`,
             5000
@@ -1643,6 +1787,13 @@ function advanceTour() {
             if (!tourActive) return;
             _startTourLightspeed(wpsInRange);
         }, 2000);
+    };
+
+    // Zoom out se necessário, depois ativa lightspeed
+    if (currentScale < 1500) {
+        startProgrammedAnim(fromDist, 3000, doLaunch);
+    } else {
+        doLaunch();
     }
 }
 

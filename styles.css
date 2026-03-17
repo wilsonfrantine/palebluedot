@@ -733,14 +733,14 @@ body.dragging #universe { cursor: grabbing; }
 }
 
 .si-label {
-    font-size: 9px;
+    font-size: clamp(9px, 1.2vw, 14px);
     letter-spacing: 5px;
     color: rgba(255, 255, 255, 0.35);
     text-transform: uppercase;
 }
 
 .si-main {
-    font-size: 28px;
+    font-size: clamp(28px, 4vw, 56px);
     letter-spacing: 4px;
     color: rgba(255, 255, 255, 0.80);
     text-transform: uppercase;
@@ -748,14 +748,14 @@ body.dragging #universe { cursor: grabbing; }
 }
 
 .si-sub {
-    font-size: 11px;
+    font-size: clamp(11px, 1.5vw, 18px);
     letter-spacing: 3px;
     color: rgba(0, 170, 255, 0.70);
     text-transform: uppercase;
 }
 
 .si-arrow {
-    font-size: 9px;
+    font-size: clamp(9px, 1.2vw, 14px);
     letter-spacing: 4px;
     color: rgba(255, 255, 255, 0.25);
     text-transform: uppercase;
@@ -1678,9 +1678,7 @@ body.dragging #universe { cursor: grabbing; }
         right: 16px;
     }
 
-    /* Scale intro */
-    .si-main { font-size: 20px; }
-    .si-sub  { font-size: 10px; }
+    /* Scale intro — clamp() already handles mobile sizing */
 }
 
 /* ---------- Phone landscape (height ≤ 440px) --------------------- */
@@ -1696,4 +1694,141 @@ body.dragging #universe { cursor: grabbing; }
     #settings-toggle { top: 8px; right: 8px; }
 
     #msg-overlay { font-size: 11px; }
+}
+
+/* ─── Régua Interativa ──────────────────────────────────────────── */
+
+#measure-btn {
+    position: fixed;
+    bottom: calc(var(--ruler-h) + 110px); right: 16px;
+    background: rgba(4, 8, 18, 0.95);
+    border: 1px solid #333;
+    color: #556;
+    padding: 9px 11px;
+    font-family: inherit;
+    cursor: pointer;
+    z-index: 2050;
+    display: flex;
+    align-items: center;
+    border-radius: 2px;
+    transition: color 0.2s, border-color 0.2s;
+}
+#measure-btn:hover { color: #aaa; border-color: #555; }
+#measure-btn.active { color: #f5c518; border-color: #f5c518; }
+
+body.measure-active { cursor: crosshair !important; }
+body.measure-active * { cursor: crosshair !important; }
+
+#measure-capture {
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    pointer-events: none;
+}
+body.measure-active #measure-capture {
+    pointer-events: all;
+}
+
+#measure-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1501;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.measure-tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    border-left: 1px dashed rgba(245, 197, 24, 0.35);
+    display: none;
+}
+
+.measure-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #f5c518;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    display: none;
+    box-shadow: 0 0 6px rgba(245, 197, 24, 0.7);
+}
+
+.measure-badge {
+    position: absolute;
+    transform: translateX(-50%);
+    background: rgba(245, 197, 24, 0.12);
+    border: 1px solid rgba(245, 197, 24, 0.45);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(245, 197, 24, 0.85);
+    white-space: nowrap;
+    display: none;
+}
+
+#measure-span {
+    position: absolute;
+    height: 1px;
+    background: rgba(245, 197, 24, 0.45);
+    display: none;
+}
+#measure-span::before,
+#measure-span::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    width: 1px;
+    height: 10px;
+    background: rgba(245, 197, 24, 0.65);
+}
+#measure-span::before { left: 0; }
+#measure-span::after  { right: -1px; }
+
+#measure-distance {
+    position: absolute;
+    transform: translateX(-50%);
+    text-align: center;
+    white-space: nowrap;
+    display: none;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(245, 197, 24, 0.25);
+    border-radius: 4px;
+    padding: 5px 10px;
+    backdrop-filter: blur(4px);
+}
+#measure-distance .dist-main {
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: rgba(245, 197, 24, 0.95);
+    font-weight: 600;
+}
+#measure-distance .dist-sub {
+    font-size: 10px;
+    color: rgba(245, 197, 24, 0.55);
+    letter-spacing: 1px;
+    line-height: 1.6;
+}
+#measure-distance .dist-sub:empty { display: none; }
+
+#measure-hint {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(245, 197, 24, 0.45);
+    pointer-events: none;
+    white-space: nowrap;
+    display: none;
+    text-transform: uppercase;
+}
+
+@media (max-width: 600px) {
+    #measure-hint { bottom: 100px; font-size: 9px; }
 }

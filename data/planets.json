@@ -123,19 +123,145 @@
     }
   ],
   "info": {
-    "sun":     { "type": "Estrela",         "temp": "5.500 °C (superfície)", "period": "—",       "moons": 0,   "desc": "O coração do sistema solar. Contém 99,8% de toda a massa — o Sol domina gravitacionalmente tudo que orbita ao seu redor." },
-    "mercury": { "type": "Planeta Rochoso", "temp": "−180 a +430 °C",       "period": "88 dias",  "moons": 0,   "desc": "O menor planeta e o mais próximo do Sol. Sem atmosfera para reter calor, sofre a maior variação térmica do sistema solar." },
-    "venus":   { "type": "Planeta Rochoso", "temp": "470 °C (constante)",    "period": "225 dias", "moons": 0,   "desc": "Temperatura constante de 470 °C, suficiente para derreter chumbo. O efeito estufa mais extremo do sistema solar." },
-    "earth":   { "type": "Planeta Rochoso", "temp": "−90 a +60 °C",         "period": "365 dias", "moons": 1,   "desc": "O único mundo com vida conhecida no universo. Toda a história da humanidade aconteceu neste único ponto azul pálido." },
-    "mars":    { "type": "Planeta Rochoso", "temp": "−140 a +20 °C",        "period": "687 dias", "moons": 2,   "desc": "O Monte Olimpo tem 22 km de altitude — três vezes o Everest. Tempestades de areia podem cobrir o planeta inteiro por meses." },
-    "jupiter": { "type": "Gigante Gasoso",  "temp": "−110 °C",              "period": "12 anos",  "moons": 95,  "desc": "Massa 2,5× maior que a soma de todos os outros planetas. A Grande Mancha Vermelha é uma tempestade ativa há mais de 350 anos." },
-    "saturn":  { "type": "Gigante Gasoso",  "temp": "−140 °C",              "period": "29 anos",  "moons": 146, "desc": "Seus anéis têm 270.000 km de largura mas apenas 1 km de espessura. Tão leve que flutuaria em um oceano." },
-    "uranus":  { "type": "Gigante de Gelo", "temp": "−195 °C",              "period": "84 anos",  "moons": 28,  "desc": "Gira completamente de lado, com eixo inclinado 98°. Provavelmente virado por um impacto colossal na sua formação." },
-    "neptune": { "type": "Gigante de Gelo", "temp": "−200 °C",              "period": "165 anos", "moons": 16,  "desc": "Ventos de 2.100 km/h — os mais rápidos do sistema solar. Descoberto por cálculo matemático antes de ser visto." },
-    "pluto":    { "type": "Planeta Anão",    "temp": "−230 °C",              "period": "248 anos", "moons": 5,   "desc": "Descoberto em 1930 e reclassificado como planeta anão em 2006. A luz do Sol leva 5,5 horas para chegar aqui." },
-    "ceres":    { "type": "Planeta Anão",    "temp": "−110 °C",              "period": "4,6 anos", "moons": 0,   "desc": "O maior corpo do cinturão de asteroides, com 940 km de diâmetro. Descoberto em 1801, foi considerado planeta por décadas antes de ser reclassificado." },
-    "haumea":   { "type": "Planeta Anão",    "temp": "−241 °C",              "period": "284 anos", "moons": 2,   "desc": "Gira tão rápido que tem forma de bola de rugby achatada. Seu dia dura apenas 3,9 horas — o menor entre os planetas anões." },
-    "makemake": { "type": "Planeta Anão",    "temp": "−239 °C",              "period": "306 anos", "moons": 1,   "desc": "Descoberto em 2005, três dias após a Páscoa, foi apelidado de Easterbunny. Sua superfície avermelhada é coberta de metano congelado." },
-    "eris":     { "type": "Planeta Anão",    "temp": "−243 °C",              "period": "557 anos", "moons": 1,   "desc": "Mais massivo que Plutão, sua descoberta em 2005 provocou o debate que rebaixou Plutão a planeta anão. A luz do Sol leva mais de 9 horas para chegar aqui." }
+    "sun": {
+      "type": "Nossa Estrela",
+      "distAU": "0",
+      "massEarth": "333.000",
+      "gravity": "274 m/s²",
+      "temp": "5.500 °C",
+      "period": "—",
+      "moons": 0,
+      "desc": "O Sol é o coração da nossa família planetária. Seu nome vem do latim 'Sol', que era o deus romano da luz. Ele é tão grande que 99,8% de tudo o que existe no nosso sistema está concentrado aqui dentro. Sem o seu calor e luz, a vida como conhecemos não seria possível."
+    },
+    "mercury": {
+      "type": "Planeta Rochoso",
+      "distAU": "0,39",
+      "massEarth": "0,055",
+      "gravity": "3,7 m/s²",
+      "temp": "−180 a +430 °C",
+      "period": "88 dias",
+      "moons": 0,
+      "desc": "Mercúrio recebeu esse nome por causa do deus romano que era o mensageiro mais rápido, já que este planeta voa pelo céu em alta velocidade. Ele é o menor de todos e o que fica mais perto do Sol. Por não ter ar para segurar o calor, suas noites são congelantes e seus dias são mais quentes que um forno."
+    },
+    "venus": {
+      "type": "Planeta Rochoso",
+      "distAU": "0,72",
+      "massEarth": "0,815",
+      "gravity": "8,87 m/s²",
+      "temp": "470 °C",
+      "period": "225 dias",
+      "moons": 0,
+      "desc": "Vênus é o objeto mais brilhante do céu depois da Lua, por isso recebeu o nome da deusa romana da beleza. Apesar da beleza, ele é um lugar terrível: suas nuvens grossas prendem o calor, tornando-o o planeta mais quente do sistema. Ele também gira ao contrário de quase todos os outros planetas."
+    },
+    "earth": {
+      "type": "Planeta Rochoso",
+      "distAU": "1,00",
+      "massEarth": "1,000",
+      "gravity": "9,81 m/s²",
+      "temp": "−90 a +60 °C",
+      "period": "365 dias",
+      "moons": 1,
+      "desc": "Diferente dos outros, o nome da Terra não vem de deuses, mas de palavras antigas para 'solo' ou 'chão'. Ela é o único lugar que conhecemos com água líquida e ar perfeito para respirarmos. É o nosso pálido ponto azul, um pequeno oásis de vida em meio ao grande vazio do espaço."
+    },
+    "mars": {
+      "type": "Planeta Rochoso",
+      "distAU": "1,52",
+      "massEarth": "0,107",
+      "gravity": "3,72 m/s²",
+      "temp": "−140 a +20 °C",
+      "period": "687 dias",
+      "moons": 2,
+      "desc": "Marte é vermelho como o sangue, por isso os antigos deram a ele o nome do deus romano da guerra. A cor vem da poeira de ferro que cobre sua superfície, como se o planeta estivesse enferrujado. Ele abriga o maior vulcão do sistema solar e é o lugar que mais sonhamos em visitar um dia."
+    },
+    "jupiter": {
+      "type": "Gigante Gasoso",
+      "distAU": "5,20",
+      "massEarth": "317,8",
+      "gravity": "24,79 m/s²",
+      "temp": "−110 °C",
+      "period": "12 anos",
+      "moons": 95,
+      "desc": "Júpiter é o rei dos planetas, por isso tem o nome do rei dos deuses romanos. Ele é tão imenso que caberiam todos os outros planetas dentro dele duas vezes. Ele não tem chão firme: é feito quase todo de gás. Sua 'Grande Mancha Vermelha' é, na verdade, uma tempestade gigante que dura centenas de anos."
+    },
+    "saturn": {
+      "type": "Gigante Gasoso",
+      "distAU": "9,58",
+      "massEarth": "95,16",
+      "gravity": "10,44 m/s²",
+      "temp": "−140 °C",
+      "period": "29 anos",
+      "moons": 146,
+      "desc": "Saturno recebeu o nome do pai de Júpiter na mitologia, o deus do tempo. Ele é famoso por seus anéis maravilhosos, feitos de bilhões de pedaços de gelo e rocha. É um planeta tão leve para o seu tamanho que, se você encontrasse um oceano grande o suficiente, ele ficaria boiando na superfície."
+    },
+    "uranus": {
+      "type": "Gigante de Gelo",
+      "distAU": "19,22",
+      "massEarth": "14,54",
+      "gravity": "8,69 m/s²",
+      "temp": "−195 °C",
+      "period": "84 anos",
+      "moons": 28,
+      "desc": "Urano tem o nome do deus romano do céu. Ele é um gigante de gelo com uma cor azul clara e calma. O fato mais curioso sobre ele é que ele gira 'deitado': enquanto os outros planetas giram como piões, Urano rola como uma bola em sua órbita, possivelmente por causa de um esbarrão gigante no passado."
+    },
+    "neptune": {
+      "type": "Gigante de Gelo",
+      "distAU": "30,05",
+      "massEarth": "17,15",
+      "gravity": "11,15 m/s²",
+      "temp": "−200 °C",
+      "period": "165 anos",
+      "moons": 16,
+      "desc": "Devido à sua cor azul profunda, este planeta recebeu o nome do deus romano dos mares. Netuno é o mundo dos ventos mais velozes, que sopram mais rápido do que um avião a jato. Ele fica tão longe que foi o primeiro planeta a ser descoberto usando apenas cálculos matemáticos, antes mesmo de ser visto."
+    },
+    "pluto": {
+      "type": "Planeta Anão",
+      "distAU": "39,48",
+      "massEarth": "0,0022",
+      "gravity": "0,62 m/s²",
+      "temp": "−230 °C",
+      "period": "248 anos",
+      "moons": 5,
+      "desc": "Plutão recebeu o nome do deus do submundo por estar em um lugar escuro e muito gelado. Ele é menor que a nossa Lua e, em 2006, os cientistas decidiram chamá-lo de 'planeta anão'. Apesar disso, ele é um mundo fascinante com montanhas de gelo e uma planície enorme em formato de coração."
+    },
+    "ceres": {
+      "type": "Planeta Anão",
+      "distAU": "2,77",
+      "massEarth": "0,00015",
+      "gravity": "0,27 m/s²",
+      "temp": "−110 °C",
+      "period": "4,6 anos",
+      "moons": 0,
+      "desc": "Ceres tem o nome da deusa romana da agricultura. Ele vive no cinturão de asteroides, entre Marte e Júpiter. Por muito tempo foi chamado de asteroide, mas por ser redondo e grande, hoje é um planeta anão. Ele é como um pequeno embaixador que vive entre as rochas espaciais."
+    },
+    "haumea": {
+      "type": "Planeta Anão",
+      "distAU": "43,13",
+      "massEarth": "0,0007",
+      "gravity": "0,4 m/s²",
+      "temp": "−241 °C",
+      "period": "284 anos",
+      "moons": 2,
+      "desc": "Haumea recebeu o nome da deusa havaiana do nascimento. Este pequeno mundo é muito estranho: ele gira tão rápido que ficou achatado, parecendo uma bola de futebol americano. Ele vive nos confins gelados do sistema e possui até seus próprios anéis e duas luas pequenas."
+    },
+    "makemake": {
+      "type": "Planeta Anão",
+      "distAU": "45,71",
+      "massEarth": "0,0005",
+      "gravity": "0,5 m/s²",
+      "temp": "−239 °C",
+      "period": "306 anos",
+      "moons": 1,
+      "desc": "Seu nome vem do deus da criação do povo da Ilha de Páscoa. Ele foi descoberto logo após a Páscoa, por isso a escolha. É um mundo coberto por um gelo avermelhado e brilhante. Ele é um dos maiores objetos no Cinturão de Kuiper, a região gelada que fica além de Netuno."
+    },
+    "eris": {
+      "type": "Planeta Anão",
+      "distAU": "67,67",
+      "massEarth": "0,0028",
+      "gravity": "0,82 m/s²",
+      "temp": "−243 °C",
+      "period": "557 anos",
+      "moons": 1,
+      "desc": "Éris tem o nome da deusa romana da discórdia. O nome foi escolhido porque sua descoberta causou uma grande confusão entre os astrônomos, que tiveram que repensar o que define um planeta. Ela é quase do mesmo tamanho de Plutão, mas fica muito mais longe, no frio eterno do espaço profundo."
+    }
   }
 }
