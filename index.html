@@ -16,8 +16,10 @@
 
     <!-- Minimapa do Sistema Solar -->
     <div id="minimap-container">
-        <button id="minimap-toggle" title="Mostrar/ocultar mapa">⊙</button>
-        <div id="minimap-header">SISTEMA SOLARI - MINI MAPA</div>
+        <button id="minimap-toggle" title="Mostrar/ocultar mapa">
+            <span id="minimap-toggle-icon">⊙</span>
+            <span id="minimap-toggle-label">SISTEMA SOLAR — MINI MAPA</span>
+        </button>
         <div id="minimap-canvas">
             <div id="minimap-zones"></div>
             <div id="minimap-bodies"></div>
@@ -54,6 +56,10 @@
         <div class="setting-item">
             <label>Sensibilidade do Scroll</label>
             <input type="range" id="sensitivity-slider" min="0.1" max="10" step="0.1" value="1">
+        </div>
+        <div class="setting-item" id="fs-panel-row">
+            <label>Tela Cheia</label>
+            <button id="fullscreen-btn-panel" class="settings-action-btn">Ativar</button>
         </div>
         <div class="settings-divider"></div>
         <div class="settings-section-title">Dicas de Navegação</div>
@@ -140,6 +146,21 @@
                 <a href="https://github.com/wilsonfrantine" target="_blank" rel="noopener">github/wilsonfrantine</a>
             </div>
         </div>
+        <button id="fullscreen-btn" title="Tela cheia">
+            <svg id="fs-icon-enter" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <polyline points="1,5 1,1 5,1"/>
+                <polyline points="11,1 15,1 15,5"/>
+                <polyline points="15,11 15,15 11,15"/>
+                <polyline points="5,15 1,15 1,11"/>
+            </svg>
+            <svg id="fs-icon-exit" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="display:none">
+                <polyline points="5,1 1,1 1,5"/>
+                <polyline points="15,5 15,1 11,1"/>
+                <polyline points="11,15 15,15 15,11"/>
+                <polyline points="1,11 1,15 5,15"/>
+            </svg>
+            <span id="fs-label">TELA CHEIA</span>
+        </button>
     </div>
 
     <!-- Painel de Detalhes do Planeta -->
@@ -147,6 +168,7 @@
         <button id="detail-collapse-btn" title="Recolher painel">◀</button>
         <div id="planet-detail-inner">
             <button id="planet-detail-close">✕</button>
+            <button id="planet-detail-back">← PLANETA</button>
             <div id="planet-detail-visual"></div>
             <div id="planet-detail-type"></div>
             <div id="planet-detail-name"></div>
@@ -158,6 +180,12 @@
 
     <!-- Overlay de Mensagens Centrais -->
     <div id="msg-overlay"></div>
+
+    <!-- Banner de contexto de escala para luas -->
+    <div id="scale-banner">
+        <div id="scale-banner-comparison"></div>
+        <div id="scale-banner-px"></div>
+    </div>
 
     <!-- Painel de Créditos -->
     <div id="credits-panel">

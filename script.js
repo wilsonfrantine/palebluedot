@@ -18,6 +18,7 @@ const MINIMAP_MAX_KM = 11_000_000_000;
 let celestialBodies  = [];
 let solarZones       = [];
 let planetData       = {};
+let moonData         = {};
 let facts            = [];
 let tourStops        = [];
 let tourDesc         = {};
@@ -25,13 +26,15 @@ let journeyWaypoints = [];
 let journeyEndData   = null;
 
 async function loadData() {
-    const [planetsJson, waypointsJson] = await Promise.all([
+    const [planetsJson, waypointsJson, moonsJson] = await Promise.all([
         fetch('data/planets.json').then(r => r.json()),
         fetch('data/waypoints.json').then(r => r.json()),
+        fetch('data/moons.json').then(r => r.json()).catch(() => ({ moons: {} })),
     ]);
     celestialBodies  = planetsJson.bodies;
     solarZones       = planetsJson.zones;
     planetData       = planetsJson.info;
+    moonData         = moonsJson.moons || {};
     journeyWaypoints = waypointsJson.waypoints;
     journeyEndData   = waypointsJson.journey_end || null;
     preloadPhotos();
@@ -62,6 +65,14 @@ let isLightspeedManual = false; // Scroll sem warp via botão manual
 let measureActive = false;
 let measureKmA    = null;
 let measureKmB    = null;
+
+// Estado do detalhe de lua/planeta
+let lastClickedMoonId       = null;   // rastreia duplo-clique nas luas
+let lastClickedMoonParentId = null;   // id do planeta pai da lua ativa
+let currentDetailBody       = null;   // planeta aberto no painel (para "voltar")
+let zoomedIntoMoon          = false;  // true após 2º clique (zoom direto na lua)
+let moonHintTimeout         = null;   // timeout para o hint do 1º clique
+let scaleBannerTimeout      = null;   // timeout para o banner de escala
 
 // Tour guiado
 let tourActive       = false;
@@ -113,6 +124,7 @@ let lastTouchTime    = 0;
 let inertiaFrame     = null;
 let initialPinchDist = null;
 let initialPinchScale = 1;
+let touchWasMulti    = false; // true se o gesto envolveu mais de 1 dedo
 
 // Star layer scroll offsets for speed-based movement (px, accumulates)
 let starScrollOffsets = [0, 0, 0];
@@ -363,6 +375,9 @@ function init() {
     updateUniversePositions();
     updateScroll();
     requestAnimationFrame(animate);
+
+    // Tenta entrar em tela cheia na abertura; navegadores podem recusar sem gesto do usuário
+    tryAutoFullscreen();
 }
 
 // ─── Campo de Estrelas ───────────────────────────────────────────────────────
@@ -400,6 +415,107 @@ function createStars() {
     });
     // Cache for JS-driven parallax
     starLayers = [0, 1, 2].map(l => field.querySelector(`.star-layer-${l}`));
+}
+
+// ─── Helpers de Luas ─────────────────────────────────────────────────────────
+
+// Melhoria 1: gradientes simulando a aparência real de cada lua no painel de detalhes
+function getMoonSphereStyle(moon) {
+    const gradients = {
+        moon:      'radial-gradient(circle at 38% 32%, #E8E8E8 0%, #B8B8B8 35%, #888880 60%, #585850 85%, #282820 100%)',
+        io:        'radial-gradient(ellipse at 32% 28%, #FFFAAA 0%, #E8C56A 30%, #CC7722 58%, #884411 82%, #442200 100%)',
+        europa:    'radial-gradient(circle at 38% 32%, #F4FAFF 0%, #C8DCEA 35%, #90AABC 60%, #5888AA 85%, #336688 100%)',
+        ganymede:  'radial-gradient(circle at 38% 32%, #DDD8C8 0%, #B0A090 35%, #807060 60%, #504838 85%, #282010 100%)',
+        callisto:  'radial-gradient(circle at 38% 32%, #9A8878 0%, #706050 35%, #503C2C 60%, #30201C 85%, #100808 100%)',
+        titan:     'radial-gradient(ellipse at 50% 40%, #FFCC66 0%, #E89933 28%, #CC6611 54%, #883300 78%, #441100 100%)',
+        triton:    'radial-gradient(circle at 38% 32%, #EEF0FF 0%, #BBCCDD 35%, #8899BB 60%, #556688 85%, #223355 100%)',
+        enceladus: 'radial-gradient(circle at 42% 35%, #FFFFFF 0%, #EEEEEE 25%, #DDDDEE 50%, #BBBBCC 72%, #8888AA 100%)',
+        charon:    'radial-gradient(ellipse at 50% 14%, #993322 0%, #883322 14%, #888899 28%, #666677 58%, #444455 80%, #222233 100%)',
+        phobos:    'radial-gradient(ellipse at 40% 38%, #B0A898 0%, #9A8B7C 35%, #786560 60%, #504540 85%, #282020 100%)',
+        deimos:    'radial-gradient(ellipse at 40% 35%, #B8B0A8 0%, #9A8B7C 35%, #786560 60%, #504540 85%, #282020 100%)',
+        mimas:     'radial-gradient(circle at 38% 32%, #EEEEEE 0%, #D0D0D0 35%, #A8A8A8 60%, #808080 85%, #484848 100%)',
+        iapetus:   'radial-gradient(circle at 65% 50%, #110800 0%, #332211 25%, #998866 55%, #DDCCBB 80%, #EEEEDD 100%)',
+    };
+    const g = gradients[moon.id];
+    return g
+        ? `background: ${g}`
+        : `background: radial-gradient(circle at 38% 32%, rgba(255,255,255,0.28), ${moon.color} 58%, rgba(0,0,0,0.5))`;
+}
+
+// Melhoria 4: destacar as luas irmãs no overview do sistema
+function highlightSiblingMoons(parentId) {
+    document.querySelectorAll('.moon-container').forEach(mc => {
+        mc.classList.toggle('sibling-highlight', mc.dataset.parentId === parentId);
+    });
+}
+
+function clearMoonHighlights() {
+    document.querySelectorAll('.moon-container.sibling-highlight').forEach(mc => {
+        mc.classList.remove('sibling-highlight');
+    });
+}
+
+// Fix 3: tooltip filho do moon-container — acompanha a lua automaticamente
+function showMoonOrbitHint(moonId) {
+    hideMoonOrbitHint(); // limpa qualquer hint anterior
+    const mc = document.getElementById(`container-${moonId}`);
+    if (!mc) return;
+
+    const hint = document.createElement('div');
+    hint.className = 'moon-orbit-hint';
+    hint.textContent = 'Clique novamente para ampliar';
+    mc.appendChild(hint);
+    // forçar reflow para a transição CSS disparar
+    hint.getBoundingClientRect();
+    hint.classList.add('visible');
+
+    if (moonHintTimeout) clearTimeout(moonHintTimeout);
+    moonHintTimeout = setTimeout(() => {
+        hint.classList.remove('visible');
+        moonHintTimeout = null;
+        setTimeout(() => hint.remove(), 400);
+    }, 2500);
+}
+
+function hideMoonOrbitHint() {
+    document.querySelectorAll('.moon-orbit-hint').forEach(h => {
+        h.classList.remove('visible');
+        setTimeout(() => h.remove(), 400);
+    });
+    if (moonHintTimeout) { clearTimeout(moonHintTimeout); moonHintTimeout = null; }
+}
+
+// Fix 1: banner de contexto de escala após zoom em lua
+function showScaleBanner(moon, parentBody) {
+    const bannerEl = document.getElementById('scale-banner');
+    const compEl   = document.getElementById('scale-banner-comparison');
+    const pxEl     = document.getElementById('scale-banner-px');
+    if (!bannerEl || !compEl || !pxEl) return;
+
+    const ratio = Math.round(parentBody.size / moon.size);
+    compEl.textContent = `${moon.name} é ${ratio}× menor que ${parentBody.name}`;
+    pxEl.textContent   = `1 pixel = ${Math.round(currentScale)} km`;
+
+    bannerEl.classList.add('visible');
+    if (scaleBannerTimeout) clearTimeout(scaleBannerTimeout);
+    scaleBannerTimeout = setTimeout(() => {
+        bannerEl.classList.remove('visible');
+        scaleBannerTimeout = null;
+    }, 4500);
+}
+
+function hideScaleBanner() {
+    const bannerEl = document.getElementById('scale-banner');
+    if (bannerEl) bannerEl.classList.remove('visible');
+    if (scaleBannerTimeout) { clearTimeout(scaleBannerTimeout); scaleBannerTimeout = null; }
+}
+
+// Melhoria 6: texto e comportamento hierárquico do botão "SAIR DE ÓRBITA"
+function updateZoomOutBtn() {
+    if (!zoomOutBtn) return;
+    const show = currentScale < 2500;
+    zoomOutBtn.style.display = show ? 'block' : 'none';
+    zoomOutBtn.textContent   = zoomedIntoMoon ? 'SAIR DA LUA' : 'SAIR DE ÓRBITA';
 }
 
 // ─── Criação do Universo ─────────────────────────────────────────────────────
@@ -544,14 +660,45 @@ function createUniverse() {
             mc.className = 'moon-container';
             mc.id = `container-${moon.id}`;
 
-            // Zoom ao clicar na lua: centraliza no planeta pai em escala que
-            // enquadra a órbita lunar em ~50% da meia-largura da tela.
-            // Isso garante que a lua fique visível horizontalmente E que o
-            // offset vertical (fixo em pixels) não a expulse do enquadramento.
-            mc.onclick = () => {
-                const halfW = window.innerWidth / 2;
-                const targetS = Math.max(3, moon.dist / (halfW * 0.5));
-                startProgrammedAnim(body.dist, targetS);
+            // Clique nas luas: comportamento em dois passos.
+            // 1º clique → overview do sistema (planeta + órbita lunar visíveis) + abre painel.
+            // 2º clique na mesma lua → zoom direto na lua, como fazemos nos planetas.
+            mc.onclick = (e) => {
+                e.stopPropagation();
+                if (lastClickedMoonId === moon.id) {
+                    // Segundo clique: zoom direto na lua
+                    hideMoonOrbitHint();
+                    zoomedIntoMoon = true;
+                    updateZoomOutBtn();
+                    const tgtScale = Math.max(5, moon.size * 1000 / 300);
+                    const afterZoom = () => {
+                        openMoonDetail(moon, body);
+                        showScaleBanner(moon, body);
+                    };
+                    if (window.innerWidth <= 600) {
+                        startProgrammedAnim(body.dist + moon.dist, tgtScale, afterZoom);
+                    } else {
+                        startProgrammedAnim(body.dist + moon.dist, tgtScale, afterZoom);
+                    }
+                } else {
+                    // Primeiro clique: overview + abre painel + destacar irmãs + tooltip + banner
+                    lastClickedMoonId       = moon.id;
+                    lastClickedMoonParentId = body.id;
+                    zoomedIntoMoon          = false;
+                    const halfW   = window.innerWidth / 2;
+                    const targetS = Math.max(3, moon.dist / (halfW * 0.5));
+                    const afterOverview = () => {
+                        openMoonDetail(moon, body);
+                        highlightSiblingMoons(body.id);
+                        showMoonOrbitHint(moon.id);
+                        showScaleBanner(moon, body);
+                    };
+                    if (window.innerWidth <= 600) {
+                        startProgrammedAnim(body.dist, targetS, afterOverview);
+                    } else {
+                        startProgrammedAnim(body.dist, targetS, afterOverview);
+                    }
+                }
             };
 
             const dot = document.createElement('div');
@@ -691,7 +838,22 @@ function updateUniversePositions() {
             // para que a lua nunca saia do enquadramento vertical
             const baseOffset = Math.max(28, sizePx * 0.55 + moonSizePx + 6);
             const rawV       = moon.side * baseOffset + moonVerticalOffset(idx) * 0.3;
-            const totalV     = Math.sign(rawV) * Math.min(Math.abs(rawV), hh * 0.55);
+            const rawTotalV  = Math.sign(rawV) * Math.min(Math.abs(rawV), hh * 0.55);
+
+            // Fix 2: interpola o offset vertical para zero durante o zoom direto na lua,
+            // centralizando-a na tela gradualmente conforme a escala diminui.
+            let totalV = rawTotalV;
+            if (zoomedIntoMoon && moon.id === lastClickedMoonId) {
+                const halfW      = window.innerWidth / 2;
+                const overviewS  = Math.max(3, moon.dist / (halfW * 0.5));
+                const moonZoomS  = Math.max(5, moon.size * 1000 / 300);
+                if (overviewS > moonZoomS) {
+                    const t = Math.max(0, Math.min(1, (currentScale - moonZoomS) / (overviewS - moonZoomS)));
+                    totalV  = rawTotalV * t;
+                } else {
+                    totalV = 0;
+                }
+            }
 
             mc.style.display = '';
             mc.style.left    = moonSX + 'px';
@@ -738,9 +900,7 @@ function updateUniversePositions() {
     });
 
 
-    if (zoomOutBtn) {
-        zoomOutBtn.style.display = currentScale < 2500 ? 'block' : 'none';
-    }
+    updateZoomOutBtn();
 }
 
 // ─── Minimapa ────────────────────────────────────────────────────────────────
@@ -837,6 +997,8 @@ function updateMinimap() {
 
     document.querySelectorAll('.minimap-body').forEach(el => {
         el.classList.toggle('active', nearest && el.id === `minimap-dot-${nearest.id}`);
+        // Melhoria 3: anel extra no planeta pai quando uma lua está selecionada
+        el.classList.toggle('moon-active', !!lastClickedMoonParentId && el.id === `minimap-dot-${lastClickedMoonParentId}`);
     });
 }
 
@@ -912,6 +1074,7 @@ function setupEvents() {
         if (e.touches.length === 1) {
             if (inertiaFrame) cancelAnimationFrame(inertiaFrame);
             isDragging = true;
+            touchWasMulti = false;
             dragStartX = e.touches[0].clientX;
             dragStartScrollPos = scrollPos;
 
@@ -919,8 +1082,9 @@ function setupEvents() {
             lastTouchTime = performance.now();
             touchVelocity = 0;
             initialPinchDist = null;
-        } else if (e.touches.length === 2) {
+        } else if (e.touches.length >= 2) {
             isDragging = false;
+            touchWasMulti = true;
             initialPinchDist = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
@@ -969,8 +1133,9 @@ function setupEvents() {
     window.addEventListener('touchend', (e) => {
         isDragging = false;
 
-        // Régua: tap detectado se deslocamento < 12px
-        if (measureActive && e.changedTouches.length === 1) {
+        // Régua: tap detectado apenas se foi gesto de 1 dedo, sem multi-touch,
+        // e todos os dedos foram levantados (evita registrar os dois pontos de uma vez)
+        if (measureActive && !touchWasMulti && e.touches.length === 0 && e.changedTouches.length === 1) {
             const dx = Math.abs(e.changedTouches[0].clientX - dragStartX);
             if (dx < 12) {
                 handleMeasurePoint(e.changedTouches[0].clientX);
@@ -1007,10 +1172,26 @@ function setupEvents() {
         createMinimap();
     });
 
-    // Botão Reduzir Zoom
+    // Botão Reduzir Zoom — hierárquico quando em zoom de lua
     if (zoomOutBtn) {
         zoomOutBtn.onclick = () => {
-            startProgrammedAnim(scrollPos * currentScale, 3000);
+            if (zoomedIntoMoon && lastClickedMoonParentId) {
+                // Melhoria 6: 1º clique volta ao overview do sistema (planeta + lua visíveis)
+                zoomedIntoMoon = false;
+                updateZoomOutBtn();
+                const parentBody = celestialBodies.find(b => b.id === lastClickedMoonParentId);
+                if (parentBody) {
+                    const moon = parentBody.moons.find(m => m.id === lastClickedMoonId);
+                    const halfW = window.innerWidth / 2;
+                    const targetS = moon ? Math.max(3, moon.dist / (halfW * 0.5)) : 3000;
+                    startProgrammedAnim(parentBody.dist, targetS);
+                } else {
+                    startProgrammedAnim(scrollPos * currentScale, 3000);
+                }
+            } else {
+                // Comportamento normal: sai de órbita
+                startProgrammedAnim(scrollPos * currentScale, 3000);
+            }
         };
     }
 
@@ -1129,6 +1310,54 @@ function setupEvents() {
             sensitivity = parseFloat(sensitivitySlider.value);
         };
     }
+
+    // Fullscreen
+    const canFs = !!(document.documentElement.requestFullscreen
+        || document.documentElement.webkitRequestFullscreen);
+
+    if (!canFs) {
+        const fsBtn = document.getElementById('fullscreen-btn');
+        if (fsBtn) fsBtn.classList.add('fs-unsupported');
+        const fsRow = document.getElementById('fs-panel-row');
+        if (fsRow) fsRow.classList.add('fs-unsupported');
+    } else {
+        document.getElementById('fullscreen-btn').onclick       = toggleFullscreen;
+        document.getElementById('fullscreen-btn-panel').onclick = toggleFullscreen;
+        document.addEventListener('fullscreenchange',       updateFsButtons);
+        document.addEventListener('webkitfullscreenchange', updateFsButtons);
+    }
+}
+
+function toggleFullscreen() {
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!fsEl) {
+        (document.documentElement.requestFullscreen
+            || document.documentElement.webkitRequestFullscreen
+        ).call(document.documentElement).catch(() => {});
+    } else {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    }
+}
+
+function updateFsButtons() {
+    const inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    const iconEnter = document.getElementById('fs-icon-enter');
+    const iconExit  = document.getElementById('fs-icon-exit');
+    const label     = document.getElementById('fs-label');
+    const panelBtn  = document.getElementById('fullscreen-btn-panel');
+    if (iconEnter) iconEnter.style.display = inFs ? 'none' : '';
+    if (iconExit)  iconExit.style.display  = inFs ? '' : 'none';
+    if (label)     label.textContent       = inFs ? 'SAIR' : 'TELA CHEIA';
+    if (panelBtn)  panelBtn.textContent    = inFs ? 'Desativar' : 'Ativar';
+}
+
+function tryAutoFullscreen() {
+    const canFs = !!(document.documentElement.requestFullscreen
+        || document.documentElement.webkitRequestFullscreen);
+    if (!canFs) return;
+    (document.documentElement.requestFullscreen
+        || document.documentElement.webkitRequestFullscreen
+    ).call(document.documentElement).catch(() => {});
 }
 
 // ─── Zoom Manual ─────────────────────────────────────────────────────────────
@@ -1291,57 +1520,90 @@ function updateUI() {
 
 // ─── Régua ───────────────────────────────────────────────────────────────────
 
+// Arredonda para número "bonito" (1, 2, 5 × 10^n) — base para cálculo dinâmico de ticks
+function niceNum(x) {
+    if (x <= 0) return 1;
+    const mag = Math.pow(10, Math.floor(Math.log10(x)));
+    const f = x / mag;
+    if (f < 1.5) return mag;
+    if (f < 3.5) return 2 * mag;
+    if (f < 7.5) return 5 * mag;
+    return 10 * mag;
+}
+
+// Formata rótulo da régua com precisão adaptada ao tamanho do passo atual
+function formatRulerLabel(km, majorKm) {
+    if (km <= 0) return '0';
+    if (km >= UA_KM * 10000) return (km / AL_KM).toFixed(2) + ' AL';
+    if (km >= UA_KM) {
+        const stepAU = majorKm / UA_KM;
+        const dec    = Math.max(1, -Math.floor(Math.log10(stepAU)) + 1);
+        return (km / UA_KM).toFixed(Math.min(dec, 4)) + ' UA';
+    }
+    if (km >= 1e9) return (km / 1e9).toFixed(1) + 'G km';
+    if (km >= 1e6) return (km / 1e6).toFixed(0) + 'M km';
+    if (km >= 1e3) return (km / 1e3).toFixed(0) + 'k km';
+    return km.toFixed(0) + ' km';
+}
+
 function updateRuler() {
     if (!rulerTicks) return;
 
-    // Calcula step antes do guard para poder comparar posição real dos ticks
-    let stepKm = 100000;
-    if (currentScale < 100)   stepKm = 10000;
-    if (currentScale < 10)    stepKm = 1000;
-    if (currentScale > 5000)  stepKm = 1000000;
-    if (currentScale > 50000) stepKm = 10000000;
+    // Passo major dinâmico: alvo ~6 labels visíveis na tela
+    const viewKm   = window.innerWidth * currentScale;
+    const majorKm  = niceNum(viewKm / 6);
+    const minorKm  = majorKm / 5;            // 5 divisões por major tick
+    const minorPx  = minorKm / currentScale;
 
-    const stepPx = stepKm / currentScale;
-
-    // Só reconstrói quando os ticks se deslocaram ≥ 10% de um intervalo
+    // Só reconstrói quando os ticks se deslocaram ≥ 10% de um intervalo menor
     if (_lastRulerScale === currentScale &&
         _lastRulerScrollPos !== null &&
-        Math.abs(scrollPos - _lastRulerScrollPos) < stepPx * 0.1) return;
+        Math.abs(scrollPos - _lastRulerScrollPos) < minorPx * 0.1) return;
     _lastRulerScale     = currentScale;
     _lastRulerScrollPos = scrollPos;
 
+    // Mede a posição REAL do container de ticks no viewport antes de limpar
+    // (getBoundingClientRect elimina erros de parseInt e de cálculo JS vs render do browser)
+    const ticksBounds = rulerTicks.getBoundingClientRect();
+    const tickOrigin  = Math.round(ticksBounds.left);   // px do left de .ruler-ticks na tela
+    const rulerWidth  = Math.round(ticksBounds.width);  // largura real renderizada
+
     rulerTicks.innerHTML = '';
     const halfWidth  = window.innerWidth / 2;
-    const sunX       = halfWidth - scrollPos;  // screenX(0)
-    const rulerLeft  = rulerLeftPx();          // borda esquerda do #astronomical-ruler
-    // .ruler-ticks vive no content box do ruler (após o padding-left).
-    // A origem real dos ticks na tela é rulerLeft + paddingLeft, não rulerLeft.
-    const rulerEl2   = document.getElementById('astronomical-ruler');
-    const padLeft    = rulerEl2 ? parseInt(window.getComputedStyle(rulerEl2).paddingLeft) : 20;
-    const tickOrigin = rulerLeft + padLeft;    // screen-x real do left de .ruler-ticks
-    const rulerWidth = window.innerWidth - tickOrigin;
+    const sunX       = halfWidth - scrollPos;  // screenX(0) em px
 
-    // Ticks apenas para km ≥ 0
-    const offset   = scrollPos - halfWidth;
-    const startIdx = Math.max(0, Math.floor(offset / stepPx));
-    const endIdx   = startIdx + Math.ceil(rulerWidth / stepPx) + 1;
+    // Índice do primeiro tick minor visível (km ≥ 0)
+    const leftKm     = (scrollPos - halfWidth) * currentScale;  // km na borda esquerda da tela
+    const startMinor = Math.max(0, Math.floor(leftKm / minorKm));
+    const endMinor   = startMinor + Math.ceil(rulerWidth * currentScale / minorKm) + 2;
 
-    for (let i = startIdx; i <= endIdx; i++) {
-        const tickX = (i * stepPx + sunX) - tickOrigin;
-        if (tickX < 0 || tickX > rulerWidth) continue;
+    for (let i = startMinor; i <= endMinor; i++) {
+        const kmVal = i * minorKm;
+        const tickX = Math.round(sunX + kmVal / currentScale - tickOrigin);
+        if (tickX < -1 || tickX > rulerWidth + 1) continue;
+
+        const isMajor  = (i % 5 === 0);
         const tick     = document.createElement('div');
-        const isMajor  = i % 10 === 0;
         tick.className = `tick${isMajor ? ' major' : ''}`;
         tick.style.left = tickX + 'px';
+
         if (isMajor) {
             const lbl = document.createElement('div');
-            lbl.className  = 'tick-label';
-            lbl.innerText  = formatKm(i * stepKm);
+            lbl.className   = 'tick-label';
+            lbl.textContent = formatRulerLabel(kmVal, majorKm);
             tick.appendChild(lbl);
         }
         rulerTicks.appendChild(tick);
     }
 
+    // Marcador da posição atual — alinhado ao pixel inteiro do centro da tela
+    const centerX = Math.round(halfWidth) - tickOrigin;
+    if (centerX >= 0 && centerX <= rulerWidth) {
+        const marker = document.createElement('div');
+        marker.className   = 'tick-center';
+        marker.style.left  = centerX + 'px';
+        rulerTicks.appendChild(marker);
+    }
 }
 
 // ─── Animação Programada ─────────────────────────────────────────────────────
@@ -1525,6 +1787,17 @@ function openPlanetDetail(body) {
     const data = planetData[body.id];
     if (!data) return;
 
+    currentDetailBody       = body;
+    lastClickedMoonId       = null;
+    lastClickedMoonParentId = null;
+    zoomedIntoMoon          = false;
+    clearMoonHighlights();
+    hideMoonOrbitHint();
+    hideScaleBanner();
+    updateZoomOutBtn();
+    const backBtn = document.getElementById('planet-detail-back');
+    if (backBtn) backBtn.style.display = 'none';
+
     // Visual
     const visual = document.getElementById('planet-detail-visual');
     if (visual) {
@@ -1576,20 +1849,138 @@ function openPlanetDetail(body) {
 
     const moonsListEl = document.getElementById('planet-detail-moons-list');
     if (moonsListEl) {
-        moonsListEl.innerHTML = body.moons.length > 0
-            ? `<div class="detail-section-title">LUAS NESTA SIMULAÇÃO</div>` +
-              body.moons.map(m => {
-                const hasPhoto = m.photo && loadedPhotos.has(m.photo);
-                const visual = hasPhoto
-                    ? `<img class="detail-moon-thumb" src="photos/${m.photo}" alt="${m.name}">`
-                    : `<span class="detail-moon-swatch" style="background:${m.color}"></span>`;
-                return `<div class="detail-moon-item">
-                    ${visual}
-                    <span class="detail-moon-name">${m.name}</span>
-                    <span class="detail-moon-dist">${m.dist.toLocaleString('pt-BR')} km</span>
-                 </div>`;
-              }).join('')
-            : '';
+        if (body.moons.length > 0) {
+            moonsListEl.innerHTML = `<div class="detail-section-title">LUAS NESTA SIMULAÇÃO</div>` +
+                body.moons.map(m => {
+                    const hasPhoto = m.photo && loadedPhotos.has(m.photo);
+                    const thumb = hasPhoto
+                        ? `<img class="detail-moon-thumb" src="photos/${m.photo}" alt="${m.name}">`
+                        : `<span class="detail-moon-swatch" style="background:${m.color}"></span>`;
+                    const hasMoonInfo = !!moonData[m.id];
+                    return `<div class="detail-moon-item${hasMoonInfo ? ' clickable' : ''}" data-moon-id="${m.id}">
+                        ${thumb}
+                        <span class="detail-moon-name">${m.name}</span>
+                        <span class="detail-moon-dist">${m.dist.toLocaleString('pt-BR')} km</span>
+                        ${hasMoonInfo ? '<span class="detail-moon-zoom">↗</span>' : ''}
+                    </div>`;
+                }).join('');
+            // Luas clicáveis: zoom direto na lua + abre detalhe
+            moonsListEl.querySelectorAll('.detail-moon-item.clickable').forEach(item => {
+                item.addEventListener('click', () => {
+                    const moon = body.moons.find(m => m.id === item.dataset.moonId);
+                    if (!moon) return;
+                    lastClickedMoonId = moon.id;
+                    const tgtScale = Math.max(5, moon.size * 1000 / 300);
+                    if (window.innerWidth <= 600) {
+                        startProgrammedAnim(body.dist + moon.dist, tgtScale, () => openMoonDetail(moon, body));
+                    } else {
+                        startProgrammedAnim(body.dist + moon.dist, tgtScale);
+                        openMoonDetail(moon, body);
+                    }
+                });
+            });
+        } else {
+            moonsListEl.innerHTML = '';
+        }
+    }
+
+    panel.classList.add('open');
+    panel.classList.remove('collapsed');
+    const collapseBtn = document.getElementById('detail-collapse-btn');
+    if (collapseBtn) collapseBtn.textContent = '◀';
+    panel.scrollTop = 0;
+}
+
+function openMoonDetail(moon, parentBody) {
+    const panel = document.getElementById('planet-detail-panel');
+    if (!panel) return;
+    const data = moonData[moon.id];
+    if (!data) return;
+
+    // Mostra botão "voltar ao planeta" se há um planeta-mãe com dados
+    const backBtn = document.getElementById('planet-detail-back');
+    if (backBtn) {
+        backBtn.style.display = 'block';
+        backBtn.onclick = () => {
+            if (currentDetailBody) {
+                const tgtScale = Math.max(5, currentDetailBody.size * 1000 / 300);
+                if (window.innerWidth <= 600) {
+                    startProgrammedAnim(currentDetailBody.dist, tgtScale, () => openPlanetDetail(currentDetailBody));
+                } else {
+                    startProgrammedAnim(currentDetailBody.dist, tgtScale);
+                    openPlanetDetail(currentDetailBody);
+                }
+            }
+        };
+    }
+
+    lastClickedMoonParentId = parentBody.id;
+
+    // Melhoria 1: esfera da lua com gradiente rico
+    const visual = document.getElementById('planet-detail-visual');
+    if (visual) {
+        const hasPhoto  = moon.photo && loadedPhotos.has(moon.photo);
+        const sphereStyle = hasPhoto
+            ? `background-image:url('photos/${moon.photo}');background-size:cover;background-position:center`
+            : getMoonSphereStyle(moon);
+        visual.innerHTML = `<div class="pdv-sphere" style="${sphereStyle};box-shadow:0 0 40px ${moon.color}44"></div>`;
+    }
+
+    const typeEl = document.getElementById('planet-detail-type');
+    const nameEl = document.getElementById('planet-detail-name');
+    const descEl = document.getElementById('planet-detail-desc');
+    if (typeEl) typeEl.textContent = (data.type || '').toUpperCase();
+    if (nameEl) nameEl.textContent = moon.name.toUpperCase();
+    // Melhoria 5: factoid comparativo antes da descrição
+    const highlightHTML = data.highlight
+        ? `<div class="detail-highlight">${data.highlight}</div>`
+        : '';
+    if (descEl) descEl.innerHTML = highlightHTML + (data.desc || '');
+
+    const statsEl = document.getElementById('planet-detail-stats');
+    if (statsEl) {
+        const rows = [
+            ['Planeta-mãe',          parentBody.name],
+            ['Dist. do planeta',     `${moon.dist.toLocaleString('pt-BR')} km`],
+            ['Diâmetro',             `${(moon.size * 1000).toLocaleString('pt-BR')} km`],
+            ['Massa (Terra = 1)',     data.massEarth || '—'],
+            ['Gravidade',            data.gravity || '—'],
+            ['Temperatura',          data.temp || '—'],
+            ['Período Orbital',      data.period || '—'],
+            ['Descoberta',           data.discovery || '—'],
+        ];
+        statsEl.innerHTML = rows.map(([l, v]) =>
+            `<div class="detail-stat"><span class="detail-stat-label">${l}</span><span class="detail-stat-value">${v}</span></div>`
+        ).join('');
+    }
+
+    // Referência ao planeta-mãe com botão para voltar
+    const moonsListEl = document.getElementById('planet-detail-moons-list');
+    if (moonsListEl) {
+        const hasParentPhoto = parentBody.photo && loadedPhotos.has(parentBody.photo);
+        const parentThumb = hasParentPhoto
+            ? `<img class="detail-moon-thumb" src="photos/${parentBody.photo}" alt="${parentBody.name}">`
+            : `<span class="detail-moon-swatch" style="background:${parentBody.color}"></span>`;
+        moonsListEl.innerHTML = `<div class="detail-section-title">PLANETA-MÃE</div>
+            <div class="detail-moon-item clickable" id="detail-back-to-planet">
+                ${parentThumb}
+                <span class="detail-moon-name">${parentBody.name}</span>
+                <span class="detail-moon-dist">← ver planeta</span>
+            </div>`;
+        const backItem = moonsListEl.querySelector('#detail-back-to-planet');
+        if (backItem) {
+            backItem.addEventListener('click', () => {
+                if (currentDetailBody) {
+                    const tgtScale = Math.max(5, currentDetailBody.size * 1000 / 300);
+                    if (window.innerWidth <= 600) {
+                        startProgrammedAnim(currentDetailBody.dist, tgtScale, () => openPlanetDetail(currentDetailBody));
+                    } else {
+                        startProgrammedAnim(currentDetailBody.dist, tgtScale);
+                        openPlanetDetail(currentDetailBody);
+                    }
+                }
+            });
+        }
     }
 
     panel.classList.add('open');
@@ -1605,7 +1996,17 @@ function closePlanetDetail() {
         panel.classList.remove('open');
         panel.classList.remove('collapsed');
     }
-    
+    lastClickedMoonId       = null;
+    lastClickedMoonParentId = null;
+    currentDetailBody       = null;
+    zoomedIntoMoon          = false;
+    clearMoonHighlights();
+    hideMoonOrbitHint();
+    hideScaleBanner();
+    updateZoomOutBtn();
+    const backBtn = document.getElementById('planet-detail-back');
+    if (backBtn) backBtn.style.display = 'none';
+
     // Reseta o ícone do botão de colapso para quando abrir novamente
     const collapseBtn = document.getElementById('detail-collapse-btn');
     if (collapseBtn) collapseBtn.textContent = '◀';

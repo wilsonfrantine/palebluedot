@@ -292,14 +292,27 @@ body.dragging #universe { cursor: grabbing; }
 /* Minimap toggle button — always visible */
 #minimap-toggle {
     display: inline-flex;
+    align-items: center;
+    gap: 8px;
     background: none;
     border: none;
-    color: #445566;
-    font-size: 14px;
+    color: #7a8fa8;
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 3px;
+    padding-bottom: 10px; /* fix 4: espaço entre título e barra do minimap */
     line-height: 1;
     transition: color 0.2s;
+    text-transform: uppercase;
+}
+
+#minimap-toggle-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+#minimap-toggle-label {
+    font-size: 10px;
+    letter-spacing: 4px;
 }
 
 #minimap-toggle:hover { color: var(--accent-color); }
@@ -317,14 +330,7 @@ body.dragging #universe { cursor: grabbing; }
 }
 
 #minimap-header {
-    font-size: 10px;
-    letter-spacing: 4px;
-    color: #445566;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: none;
 }
 
 #minimap-canvas {
@@ -538,6 +544,27 @@ body.dragging #universe { cursor: grabbing; }
     letter-spacing: 1px;
 }
 
+/* Marcador de posição atual na régua */
+.tick-center {
+    position: absolute;
+    bottom: 0;
+    width: 1px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+}
+
+.tick-center::before {
+    content: '▼';
+    position: absolute;
+    top: -13px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0;
+}
+
 #info-display {
     display: flex;
     justify-content: space-around;
@@ -646,6 +673,36 @@ body.dragging #universe { cursor: grabbing; }
     margin: 0 0 44px;
     font-weight: 400;
 }
+
+#fullscreen-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: inherit;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+#fullscreen-btn:hover {
+    color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Ocultar em ambientes que não suportam fullscreen */
+#fullscreen-btn.fs-unsupported { display: none; }
+#fs-panel-row.fs-unsupported   { display: none; }
 
 #welcome-author {
     position: absolute;
@@ -769,7 +826,7 @@ body.dragging #universe { cursor: grabbing; }
     top: 16px; right: 12px;
     background: none;
     border: none;
-    color: #334;
+    color: #5a7090;
     cursor: pointer;
     z-index: 2100;
     width: 32px; height: 32px;
@@ -797,7 +854,7 @@ body.dragging #universe { cursor: grabbing; }
 #settings-panel h3 {
     font-size: 9px;
     letter-spacing: 4px;
-    color: #333;
+    color: #5a7090;
     margin-bottom: 20px;
     padding-bottom: 12px;
     border-bottom: 1px solid #0e0e1a;
@@ -815,7 +872,7 @@ body.dragging #universe { cursor: grabbing; }
 .setting-item label {
     font-size: 9px;
     letter-spacing: 2px;
-    color: #555;
+    color: #7a8fa8;
     text-transform: uppercase;
     flex: 1;
 }
@@ -835,15 +892,15 @@ body.dragging #universe { cursor: grabbing; }
 .settings-section-title {
     font-size: 7px;
     letter-spacing: 4px;
-    color: #222;
+    color: #4a6480;
     margin-bottom: 14px;
     text-transform: uppercase;
 }
 
 .settings-action-btn {
     background: none;
-    border: 1px solid #222;
-    color: #334;
+    border: 1px solid #3a5268;
+    color: #6a8aa8;
     font-family: inherit;
     font-size: 8px;
     letter-spacing: 2px;
@@ -852,7 +909,7 @@ body.dragging #universe { cursor: grabbing; }
     cursor: pointer;
     transition: 0.2s;
 }
-.settings-action-btn:hover { border-color: rgba(0,170,255,0.3); color: rgba(0,170,255,0.6); }
+.settings-action-btn:hover { border-color: rgba(0,170,255,0.5); color: rgba(0,170,255,0.8); }
 
 .settings-help-grid {
     display: grid;
@@ -1180,6 +1237,25 @@ body.dragging #universe { cursor: grabbing; }
 
 #planet-detail-close:hover { color: var(--accent-color); }
 
+#planet-detail-back {
+    display: none;
+    position: absolute;
+    top: 12px;
+    left: 40px;
+    background: none;
+    border: none;
+    color: #4a6a8a;
+    cursor: pointer;
+    font-size: 9px;
+    font-family: inherit;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+    padding: 0;
+}
+
+#planet-detail-back:hover { color: var(--accent-color); }
+
 /* Visual: esfera + luas */
 #planet-detail-visual {
     display: flex;
@@ -1314,6 +1390,25 @@ body.dragging #universe { cursor: grabbing; }
     padding: 5px 0;
     border-bottom: 1px solid #06060e;
 }
+
+.detail-moon-item.clickable {
+    cursor: pointer;
+    transition: background 0.15s;
+    padding-left: 4px;
+    border-radius: 3px;
+}
+
+.detail-moon-item.clickable:hover { background: rgba(0,170,255,0.06); }
+.detail-moon-item.clickable:hover .detail-moon-name { color: var(--accent-color); }
+
+.detail-moon-zoom {
+    font-size: 9px;
+    color: #1a3040;
+    transition: color 0.15s;
+    flex-shrink: 0;
+}
+
+.detail-moon-item.clickable:hover .detail-moon-zoom { color: var(--accent-color); }
 
 .detail-moon-swatch {
     width: 5px;
@@ -1481,6 +1576,98 @@ body.dragging #universe { cursor: grabbing; }
 
 .credits-value a:hover { color: rgba(0, 170, 255, 0.9); }
 
+/* ─── Melhoria 2: Tooltip de 1º clique na lua (filho do container) ─ */
+
+.moon-orbit-hint {
+    position: absolute;
+    bottom: calc(100% + 6px);  /* acima do topo do moon-container */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 10, 24, 0.88);
+    border: 1px solid rgba(0, 170, 255, 0.25);
+    color: rgba(0, 170, 255, 0.85);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    pointer-events: none;
+    z-index: 5000;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.moon-orbit-hint.visible { opacity: 1; }
+
+/* ─── Fix 1: Banner de contexto de escala ───────────────────────── */
+
+#scale-banner {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 116px;
+    background: rgba(0, 5, 18, 0.88);
+    border: 1px solid rgba(0, 170, 255, 0.14);
+    padding: 8px 22px 9px;
+    z-index: 3000;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+#scale-banner.visible { opacity: 1; }
+
+#scale-banner-comparison {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.75);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+#scale-banner-px {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(0, 170, 255, 0.65);
+    text-transform: uppercase;
+}
+
+/* ─── Melhoria 3: Minimap — lua ativa no planeta pai ────────────── */
+
+.minimap-body.moon-active .minimap-dot-visual {
+    box-shadow:
+        0 0 0 2px rgba(0, 170, 255, 0.18),
+        0 0 8px rgba(0, 170, 255, 0.35);
+}
+
+/* ─── Melhoria 4: Labels das luas irmãs destacadas ──────────────── */
+
+.moon-container.sibling-highlight .moon-label {
+    color: rgba(180, 220, 255, 0.9);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+}
+
+.moon-container.sibling-highlight .moon-body {
+    opacity: 1;
+    box-shadow: 0 0 6px rgba(100, 180, 255, 0.35);
+}
+
+/* ─── Melhoria 5: Factoid comparativo no painel de detalhe ──────── */
+
+.detail-highlight {
+    background: rgba(0, 100, 180, 0.10);
+    border-left: 2px solid rgba(0, 170, 255, 0.45);
+    color: rgba(180, 220, 255, 0.85);
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+    padding: 8px 12px;
+    margin-bottom: 14px;
+    border-radius: 0 3px 3px 0;
+}
+
 /* ─── Moon thumbnail in detail panel ────────────────────────────── */
 
 .detail-moon-thumb {
@@ -1543,10 +1730,9 @@ body.dragging #universe { cursor: grabbing; }
         padding: 10px 10px 5px !important;
     }
 
-    #minimap-header {
-        font-size: 8px;
+    #minimap-toggle-label {
+        font-size: 10px;
         letter-spacing: 2px;
-        color: #8899aa;
     }
 
     .minimap-dot-label {

@@ -1,0 +1,237 @@
+{
+  "moons": {
+    "moon": {
+      "type": "Lua da Terra",
+      "massEarth": "0,0123",
+      "gravity": "1,62 m/s²",
+      "temp": "−173 a +127 °C",
+      "period": "27,3 dias",
+      "discovery": "Pré-histórica",
+      "highlight": "Sem a Lua, o eixo da Terra seria caótico e o clima inabitável para a vida complexa.",
+      "desc": "A Lua é o único satélite natural da Terra e um dos maiores do sistema solar em proporção ao seu planeta. Por mais de 4 bilhões de anos ela molda as marés dos oceanos e estabilizou o eixo de rotação terrestre, tornando o clima mais previsível para o surgimento da vida. Seu nome vem do latim <em>luna</em>, que era também a deusa romana da Lua."
+    },
+    "phobos": {
+      "type": "Lua de Marte",
+      "massEarth": "~1,8×10⁻⁹",
+      "gravity": "0,0057 m/s²",
+      "temp": "−4 a −112 °C",
+      "period": "7h 39min",
+      "discovery": "1877 — Asaph Hall",
+      "desc": "Fobos é a maior e mais interna das duas luas de Marte, com formato irregular que lembra uma batata. Seu nome vem do deus grego do medo. Ela orbita Marte tão próxima que completa uma volta mais rápido do que o planeta gira — o único satélite natural conhecido a fazer isso. A cada 100 anos, se aproxima cerca de 1,8 m de Marte. Daqui a 50 milhões de anos pode se fragmentar e formar um anel."
+    },
+    "deimos": {
+      "type": "Lua de Marte",
+      "massEarth": "~3×10⁻¹⁰",
+      "gravity": "0,003 m/s²",
+      "temp": "−40 °C",
+      "period": "30h 18min",
+      "discovery": "1877 — Asaph Hall",
+      "desc": "Deimos é a menor e mais externa das luas de Marte. Seu nome vem do deus grego do terror, irmão de Fobos. Ao contrário de Fobos, Deimos se afasta lentamente de Marte. Com apenas cerca de 15 km de comprimento, é um dos menores satélites naturais conhecidos — mais um asteroide capturado do que uma lua \"clássica\"."
+    },
+    "io": {
+      "type": "Lua de Júpiter",
+      "massEarth": "0,015",
+      "gravity": "1,796 m/s²",
+      "temp": "−143 a +1.600 °C",
+      "period": "1,77 dias",
+      "discovery": "1610 — Galileu Galilei",
+      "highlight": "O corpo mais vulcanicamente ativo do sistema solar — mais vulcões ativos que a Terra inteira.",
+      "desc": "Io é o corpo mais vulcanicamente ativo do sistema solar. As marés gravitacionais impostas por Júpiter e pelas outras luas galileanas aquecem seu interior, alimentando mais de 400 vulcões ativos. Seu nome vem de uma sacerdotisa amada por Zeus na mitologia grega. As erupções lançam enxofre tão alto que podem ser detectadas de telescópios na Terra."
+    },
+    "europa": {
+      "type": "Lua de Júpiter",
+      "massEarth": "0,008",
+      "gravity": "1,315 m/s²",
+      "temp": "−160 a −220 °C",
+      "period": "3,55 dias",
+      "discovery": "1610 — Galileu Galilei",
+      "highlight": "Pode ter mais água líquida que todos os oceanos da Terra combinados — sob a casca de gelo.",
+      "desc": "Europa é coberta por uma casca de gelo lisa e brilhante, sob a qual os cientistas acreditam existir um oceano global de água líquida. É um dos lugares mais promissores para a busca de vida fora da Terra. Seu nome vem de uma princesa fenícia da mitologia grega. A NASA enviou a missão Europa Clipper para investigar sua habitabilidade em detalhes."
+    },
+    "ganymede": {
+      "type": "Lua de Júpiter",
+      "massEarth": "0,025",
+      "gravity": "1,428 m/s²",
+      "temp": "−163 °C",
+      "period": "7,15 dias",
+      "discovery": "1610 — Galileu Galilei",
+      "highlight": "Maior que Mercúrio. Se orbitasse o Sol diretamente, seria classificado como planeta.",
+      "desc": "Ganimedes é a maior lua do sistema solar — maior até que Mercúrio — e o único satélite natural com campo magnético próprio. Seu nome vem de um jovem transportado ao Olimpo pelos deuses gregos. Sob sua superfície de gelo provavelmente existe um oceano de água salgada. É uma das quatro luas galileanas descobertas por Galileu em 1610."
+    },
+    "callisto": {
+      "type": "Lua de Júpiter",
+      "massEarth": "0,018",
+      "gravity": "1,235 m/s²",
+      "temp": "−139 a −193 °C",
+      "period": "16,7 dias",
+      "discovery": "1610 — Galileu Galilei",
+      "desc": "Calisto é a lua mais externa das galileanas e a superfície mais craterada do sistema solar. Sua crosta antiga e pouco alterada sugere mínima atividade geológica. Seu nome vem de uma ninfa transformada em ursa na mitologia grega. Pesquisas indicam a possibilidade de um oceano subsuperficial abaixo da camada de gelo."
+    },
+    "mimas": {
+      "type": "Lua de Saturno",
+      "massEarth": "~6,3×10⁻⁶",
+      "gravity": "0,064 m/s²",
+      "temp": "−209 °C",
+      "period": "22,6h",
+      "discovery": "1789 — William Herschel",
+      "desc": "Mimas é famosa por sua cratera gigante Herschel, que lhe confere uma semelhança impressionante com a Estrela da Morte de Star Wars. É composta principalmente de gelo de água e, apesar de sua aparência tranquila, exerce influência gravitacional importante na Divisão de Cassini — a lacuna entre os anéis de Saturno."
+    },
+    "enceladus": {
+      "type": "Lua de Saturno",
+      "massEarth": "~1,8×10⁻⁵",
+      "gravity": "0,113 m/s²",
+      "temp": "−198 °C (geral); −93 °C (polo sul)",
+      "period": "32,9h",
+      "discovery": "1789 — William Herschel",
+      "highlight": "Gêiseres ativos lançam água ao espaço. Um dos maiores candidatos à vida extraterrestre.",
+      "desc": "Encélado é uma das descobertas mais surpreendentes do sistema solar. Seu polo sul possui gêiseres ativos que lançam vapor d'água e partículas de gelo ao espaço, alimentando o anel E de Saturno. Sob sua crosta brilhante existe um oceano global de água líquida com compostos orgânicos e calor hidrotérmico — tornando-o um dos candidatos mais sérios à busca de vida extraterrestre."
+    },
+    "tethys": {
+      "type": "Lua de Saturno",
+      "massEarth": "~1×10⁻⁴",
+      "gravity": "0,146 m/s²",
+      "temp": "−187 °C",
+      "period": "45,3h",
+      "discovery": "1684 — Giovanni Cassini",
+      "desc": "Tétis é composta quase inteiramente de gelo de água. Possui dois grandes acidentes geográficos: a cratera Odisseu, com quase 400 km de diâmetro, e o Ithaca Chasma, um cânion que percorre cerca de três quartos da circunferência da lua. Seu nome vem da deusa grega dos mares."
+    },
+    "dione": {
+      "type": "Lua de Saturno",
+      "massEarth": "~1,8×10⁻⁴",
+      "gravity": "0,232 m/s²",
+      "temp": "−186 °C",
+      "period": "2,74 dias",
+      "discovery": "1684 — Giovanni Cassini",
+      "desc": "Dione é uma lua de gelo com duas faces distintas: a face anterior é marcada por crateras, enquanto a face posterior exibe feições brilhantes em forma de teia que são penhascos de gelo. Compartilha sua órbita com as luas troianas Helene e Polideuces. Seu nome vem de uma titânide da mitologia grega."
+    },
+    "rhea": {
+      "type": "Lua de Saturno",
+      "massEarth": "~3,4×10⁻⁶",
+      "gravity": "0,264 m/s²",
+      "temp": "−174 °C",
+      "period": "4,52 dias",
+      "discovery": "1672 — Giovanni Cassini",
+      "desc": "Réia é a segunda maior lua de Saturno. Dados da sonda Cassini sugeriram a possível existência de um sistema tênue de anéis ao redor da própria lua — o primeiro já detectado em torno de um satélite natural. Sua superfície de gelo é repleta de crateras e falésias. Seu nome vem da mãe dos deuses olímpicos na mitologia grega."
+    },
+    "titan": {
+      "type": "Lua de Saturno",
+      "massEarth": "0,0225",
+      "gravity": "1,352 m/s²",
+      "temp": "−179 °C",
+      "period": "15,9 dias",
+      "discovery": "1655 — Christiaan Huygens",
+      "highlight": "Único satélite com atmosfera densa. A pressão em sua superfície é 1,5× a da Terra.",
+      "desc": "Titã é a segunda maior lua do sistema solar e a única com uma atmosfera densa — composta de nitrogênio e metano, ela lembra a Terra primitiva. Seus lagos e rios de metano líquido, dunas de compostos orgânicos e chuvas de metano criam um ciclo hidrológico completo, porém de hidrocarbonetos. É um laboratório natural para entender a química pré-biótica."
+    },
+    "iapetus": {
+      "type": "Lua de Saturno",
+      "massEarth": "~2,8×10⁻⁵",
+      "gravity": "0,224 m/s²",
+      "temp": "−143 a −173 °C",
+      "period": "79,3 dias",
+      "discovery": "1671 — Giovanni Cassini",
+      "desc": "Jápeto é famoso pelo contraste extremo entre suas duas faces: uma das regiões mais escuras do sistema solar e uma área brilhante como neve. Cassini ficou intrigado ao observar que só conseguia vê-lo de um lado da órbita de Saturno. Também possui uma crista equatorial imponente com até 20 km de altitude — de origem ainda incerta."
+    },
+    "miranda": {
+      "type": "Lua de Urano",
+      "massEarth": "~1×10⁻⁵",
+      "gravity": "0,079 m/s²",
+      "temp": "−187 °C",
+      "period": "1,41 dias",
+      "discovery": "1948 — Gerard Kuiper",
+      "desc": "Miranda é a menor das principais luas de Urano e possui uma das superfícies mais caóticas do sistema solar, com terrenos antigos e jovens justapostos de forma inexplicável. Seu maior destaque é o Verona Rupes — o penhasco mais alto conhecido no sistema solar, com até 20 km de altitude. Acredita-se que Miranda pode ter sido fragmentada e reagrupada no passado."
+    },
+    "ariel": {
+      "type": "Lua de Urano",
+      "massEarth": "~2×10⁻⁵",
+      "gravity": "0,269 m/s²",
+      "temp": "−213 °C",
+      "period": "2,52 dias",
+      "discovery": "1851 — William Lassell",
+      "desc": "Ariel é a mais brilhante das luas de Urano, com uma superfície relativamente jovem coberta por cânions e planícies suaves. Seu nome vem do espírito do ar na peça <em>A Tempestade</em> de Shakespeare — assim como todas as principais luas de Urano são batizadas com nomes de personagens shakespearianos. Mostra sinais de atividade geológica mais recente que suas vizinhas."
+    },
+    "umbriel": {
+      "type": "Lua de Urano",
+      "massEarth": "~1,6×10⁻⁵",
+      "gravity": "0,23 m/s²",
+      "temp": "−208 °C",
+      "period": "4,14 dias",
+      "discovery": "1851 — William Lassell",
+      "desc": "Umbriel é a mais escura das principais luas de Urano e possui uma superfície muito antiga e densamente craterada, sugerindo pouca atividade geológica. Seu nome vem de um espírito das sombras no poema de Alexander Pope. Uma misteriosa cratera brilhante chamada Wunda reluz em sua face equatorial — sua composição ainda é desconhecida."
+    },
+    "titania": {
+      "type": "Lua de Urano",
+      "massEarth": "~5,9×10⁻⁵",
+      "gravity": "0,379 m/s²",
+      "temp": "−203 °C",
+      "period": "8,71 dias",
+      "discovery": "1787 — William Herschel",
+      "desc": "Titânia é a maior lua de Urano e a oitava maior do sistema solar. Seu nome vem da Rainha das Fadas em <em>Sonho de uma Noite de Verão</em> de Shakespeare. Possui imensos cânions e falhas que sugerem expansão geológica passada. Provavelmente é composta de gelo e rocha em partes iguais e pode ter um oceano subsuperficial líquido."
+    },
+    "oberon": {
+      "type": "Lua de Urano",
+      "massEarth": "~5,1×10⁻⁵",
+      "gravity": "0,346 m/s²",
+      "temp": "−198 °C",
+      "period": "13,5 dias",
+      "discovery": "1787 — William Herschel",
+      "desc": "Oberon é a segunda maior lua de Urano e a mais distante das principais. Seu nome vem do Rei das Fadas em <em>Sonho de uma Noite de Verão</em> de Shakespeare. Sua superfície é coberta por crateras antigas e apresenta um sistema de cânions. A Voyager 2 avistou em sua borda uma montanha com cerca de 6 km de altura."
+    },
+    "triton": {
+      "type": "Lua de Netuno",
+      "massEarth": "~0,0036",
+      "gravity": "0,779 m/s²",
+      "temp": "−235 °C",
+      "period": "5,88 dias (retrógrado)",
+      "discovery": "1846 — William Lassell",
+      "highlight": "Capturado do Cinturão de Kuiper. Único grande satélite a orbitar em sentido retrógrado.",
+      "desc": "Tritão é a única grande lua do sistema solar que orbita seu planeta no sentido contrário à rotação — o que indica que foi capturado do Cinturão de Kuiper. É geologicamente ativo, com gêiseres de nitrogênio gasoso que lançam material escuro a quilômetros de altitude. Em alguns bilhões de anos, a gravidade de Netuno o fragmentará, provavelmente criando um sistema de anéis."
+    },
+    "charon": {
+      "type": "Lua de Plutão",
+      "massEarth": "~2,9×10⁻⁴",
+      "gravity": "0,288 m/s²",
+      "temp": "−220 °C",
+      "period": "6,39 dias",
+      "discovery": "1978 — James Christy",
+      "highlight": "O centro de massa do sistema Plutão–Caronte fica fora de Plutão. É um planeta duplo.",
+      "desc": "Caronte é tão grande em relação a Plutão que os dois formam um sistema binário — ambos orbitam um ponto no espaço entre eles. Os dois se encaram sempre com a mesma face, em rotação síncrona mútua. A missão New Horizons revelou uma superfície rica em gelo de água e uma misteriosa região escuro-avermelhada no polo norte chamada Mordor Macula."
+    },
+    "hi-iaka": {
+      "type": "Lua de Haumea",
+      "massEarth": "—",
+      "gravity": "—",
+      "temp": "~−243 °C",
+      "period": "49,5 dias",
+      "discovery": "2005 — Mike Brown et al.",
+      "desc": "Hiʻiaka é a maior das duas luas de Haumea. Seu nome vem da deusa havaiana nascida do ventre da própria Haumea. Orbita Haumea em aproximadamente 49 dias e parece envolta em gelo de água puro. Foi descoberta junto com Haumea em 2005 durante estudos de objetos transnetunianos pelo Observatório W. M. Keck."
+    },
+    "namaka": {
+      "type": "Lua de Haumea",
+      "massEarth": "—",
+      "gravity": "—",
+      "temp": "~−243 °C",
+      "period": "18,3 dias",
+      "discovery": "2005 — Mike Brown et al.",
+      "desc": "Namaka é a menor e mais interna das luas de Haumea. Seu nome vem de uma divindade havaiana filha de Haumea — a personificação da água do mar. Sua órbita incomum e levemente elíptica sugere interações gravitacionais complexas com Hiʻiaka. Foi descoberta em 2005 juntamente com a própria Haumea."
+    },
+    "mk2": {
+      "type": "Lua de Makemake",
+      "massEarth": "—",
+      "gravity": "—",
+      "temp": "~−243 °C",
+      "period": "~12,4 dias",
+      "discovery": "2015 — Alex Parker et al. (Hubble)",
+      "desc": "MK2 é a única lua conhecida de Makemake. Foi descoberta pelo Telescópio Espacial Hubble em 2015 e oficialmente designada S/2015 (136472) 1. É uma lua escura e pequena — bem diferente do planeta anão brilhante que orbita. Sua descoberta permitiu estimar pela primeira vez a massa de Makemake com precisão."
+    },
+    "dysnomia": {
+      "type": "Lua de Éris",
+      "massEarth": "—",
+      "gravity": "—",
+      "temp": "~−243 °C",
+      "period": "15,8 dias",
+      "discovery": "2005 — Mike Brown et al.",
+      "desc": "Disnômia é a única lua conhecida de Éris. Seu nome vem da filha da deusa Éris na mitologia grega — a personificação da desordem. Observações precisas de sua órbita permitiram calcular a massa de Éris, revelando que ela é ligeiramente mais massiva que Plutão. Foi descoberta em 2005, logo após a própria Éris ser identificada."
+    }
+  }
+}
